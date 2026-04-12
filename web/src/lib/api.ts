@@ -60,6 +60,9 @@ export const adminApi = {
   applications: () => api.get<import('@/types').Application[]>('/api/admin/applications'),
   evaluate:   (id: string, data: unknown) =>
     api.patch<import('@/types').Application>(`/api/admin/applications/${id}/evaluate`, data),
+  financiero:  () => api.get<import('@/types').FinancieroReport>('/api/admin/financiero'),
+  anticipo:    (id: string) =>
+    api.patch<import('@/types').Project>(`/api/admin/projects/${id}/anticipo`, {}),
 }
 
 // ─── Servicios ────────────────────────────────────────────────

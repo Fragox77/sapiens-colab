@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = {
     cliente:   [{ href: '/cliente',         label: 'Mis proyectos' }, { href: '/cliente/nuevo', label: '+ Nuevo pedido' }],
     disenador: [{ href: '/disenador', label: 'Cola de trabajo' }, { href: '/disenador/financiero', label: 'Mis finanzas' }, { href: '/disenador/perfil', label: 'Mi perfil' }],
-    admin:     [{ href: '/admin',            label: 'Dashboard' }, { href: '/admin/proyectos', label: 'Proyectos' }, { href: '/admin/postulaciones', label: 'Postulaciones' }],
+    admin:     [{ href: '/admin', label: 'Dashboard' }, { href: '/admin/proyectos', label: 'Proyectos' }, { href: '/admin/financiero', label: 'Finanzas' }, { href: '/admin/postulaciones', label: 'Postulaciones' }],
   }
 
   const items = navItems[user.role] || []

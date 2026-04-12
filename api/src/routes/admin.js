@@ -99,6 +99,113 @@ router.get('/dashboard', async (_req, res) => {
   }
 });
 
+// ─── FINANCIERO ───────────────────────────────────────────────
+
+// PATCH /api/admin/projects/:id/anticipo — Registrar pago de anticipo
+router.patch('/projects/:id/anticipo', async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'No encontrado' });
+    if (project.payments.anticipo.paid)
+      return res.status(400).json({ error: 'El anticipo ya fue registrado' });
+
+    project.payments.anticipo.paid  = true;
+    project.payments.anticipo.paidAt = new Date();
+    project.timeline.push({ action: 'ANTICIPO_RECIBIDO', by: req.user.id });
+    await project.save();
+
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/financiero — Reporte financiero completo
+router.get('/financiero', async (_req, res) => {
+  try {
+    const projects = await Project.find({ status: { $ne: 'cancelado' } })
+      .populate('client',   'name company')
+      .populate('designer', 'name level specialty')
+      .sort('-createdAt');
+
+    // ─── KPIs globales ────────────────────────────────────────
+    const completados  = projects.filter(p => p.status === 'completado');
+    const activos      = projects.filter(p => !['completado', 'cancelado', 'cotizado'].includes(p.status));
+    const cotizados    = projects.filter(p => p.status === 'cotizado');
+
+    const totalFacturado  = completados.reduce((a, p) => a + p.pricing.total, 0);
+    const comisionSapiens = completados.reduce((a, p) => a + p.pricing.commission, 0);
+    const pagadoDisenadores = completados.reduce((a, p) => a + p.pricing.designerPay, 0);
+
+    // Pipeline activo (lo que está en producción, por cobrar)
+    const pipelineTotal   = activos.reduce((a, p) => a + p.pricing.total, 0);
+    const pipelineBalance = activos
+      .filter(p => !p.payments.balance.paid)
+      .reduce((a, p) => a + p.pricing.balance, 0);
+
+    // Anticipos pendientes de recibir
+    const anticiposPendientes = projects
+      .filter(p => !p.payments.anticipo.paid && p.status !== 'cotizado')
+      .reduce((a, p) => a + p.pricing.anticipo, 0);
+
+    // Balances pendientes de cobrar (proyectos aprobados)
+    const balancesPendientes = projects
+      .filter(p => p.status === 'aprobado' && !p.payments.balance.paid)
+      .reduce((a, p) => a + p.pricing.balance, 0);
+
+    // ─── Deuda por diseñador (proyectos completados sin liquidar) ─
+    const deudaMap = {};
+    completados
+      .filter(p => p.designer && !p.payments.balance.paid)
+      .forEach(p => {
+        const id = String(p.designer._id || p.designer);
+        if (!deudaMap[id]) deudaMap[id] = { designer: p.designer, proyectos: [], totalDeuda: 0 };
+        deudaMap[id].proyectos.push({ id: p._id, title: p.title, pay: p.pricing.designerPay });
+        deudaMap[id].totalDeuda += p.pricing.designerPay;
+      });
+
+    // ─── Ingresos por mes (últimos 6 meses) ───────────────────
+    const porMes = await Project.aggregate([
+      { $match: { status: 'completado', completedAt: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) } } },
+      { $group: {
+        _id:     { year: { $year: '$completedAt' }, month: { $month: '$completedAt' } },
+        ingresos: { $sum: '$pricing.total' },
+        utilidad: { $sum: '$pricing.commission' },
+        proyectos: { $sum: 1 },
+      }},
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    res.json({
+      kpis: {
+        totalFacturado,
+        comisionSapiens,
+        pagadoDisenadores,
+        pipelineTotal,
+        anticiposPendientes,
+        balancesPendientes,
+        totalProyectos: projects.length,
+        proyectosActivos: activos.length,
+      },
+      proyectos: projects.map(p => ({
+        _id:    p._id,
+        title:  p.title,
+        status: p.status,
+        client:   p.client,
+        designer: p.designer,
+        pricing:  p.pricing,
+        payments: p.payments,
+        createdAt:   p.createdAt,
+        completedAt: p.completedAt,
+      })),
+      deudaDisenadores: Object.values(deudaMap),
+      ingresosPorMes: porMes,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── POSTULACIONES ────────────────────────────────────────────
 
 // GET /api/admin/applications

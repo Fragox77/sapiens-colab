@@ -91,3 +91,49 @@ export interface Application {
   payRange?: string
   createdAt: string
 }
+
+export interface FinancieroKpis {
+  totalFacturado: number
+  comisionSapiens: number
+  pagadoDisenadores: number
+  pipelineTotal: number
+  anticiposPendientes: number
+  balancesPendientes: number
+  totalProyectos: number
+  proyectosActivos: number
+}
+
+export interface DeudaDisenador {
+  designer: User
+  proyectos: { id: string; title: string; pay: number }[]
+  totalDeuda: number
+}
+
+export interface IngresoMes {
+  _id: { year: number; month: number }
+  ingresos: number
+  utilidad: number
+  proyectos: number
+}
+
+export interface FinancieroProject {
+  _id: string
+  title: string
+  status: ProjectStatus
+  client: User
+  designer?: User
+  pricing: Pricing
+  payments: {
+    anticipo: { paid: boolean; paidAt?: string }
+    balance:  { paid: boolean; paidAt?: string }
+  }
+  createdAt: string
+  completedAt?: string
+}
+
+export interface FinancieroReport {
+  kpis: FinancieroKpis
+  proyectos: FinancieroProject[]
+  deudaDisenadores: DeudaDisenador[]
+  ingresosPorMes: IngresoMes[]
+}
