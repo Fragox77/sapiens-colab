@@ -249,4 +249,96 @@ router.patch('/applications/:id/evaluate', async (req, res) => {
   }
 });
 
+// GET /api/admin/applications/:id — Detalle de una postulación
+router.get('/applications/:id', async (req, res) => {
+  try {
+    const app = await Application.findById(req.params.id).populate('userId', 'name email level isActive');
+    if (!app) return res.status(404).json({ error: 'Postulación no encontrada' });
+    res.json(app);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/applications/:id/brief — Asignar brief de prueba técnica
+router.patch('/applications/:id/brief', async (req, res) => {
+  try {
+    const { brief } = req.body;
+    if (!brief) return res.status(400).json({ error: 'El brief es requerido' });
+
+    const app = await Application.findById(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Postulación no encontrada' });
+    if (['aceptada', 'rechazada'].includes(app.status))
+      return res.status(400).json({ error: 'No se puede modificar una postulación ya cerrada' });
+
+    app.briefAssigned = brief;
+    app.status = 'prueba-enviada';
+    await app.save();
+
+    res.json(app);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/applications/:id/activate — Activar diseñador (crear cuenta)
+router.patch('/applications/:id/activate', async (req, res) => {
+  try {
+    const app = await Application.findById(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Postulación no encontrada' });
+    if (app.status === 'aceptada')
+      return res.status(400).json({ error: 'Esta postulación ya fue activada' });
+    if (app.status === 'rechazada')
+      return res.status(400).json({ error: 'No se puede activar una postulación rechazada' });
+    if (!app.level)
+      return res.status(400).json({ error: 'Debes evaluar y calcular el nivel antes de activar' });
+
+    const existing = await User.findOne({ email: app.email });
+    if (existing)
+      return res.status(409).json({ error: 'Ya existe un usuario con ese email' });
+
+    const tempPassword = 'Sapiens' + Math.floor(1000 + Math.random() * 9000);
+
+    const user = await User.create({
+      name:        app.name,
+      email:       app.email,
+      password:    tempPassword,
+      role:        'disenador',
+      level:       app.level,
+      specialty:   app.role,
+      portfolio:   app.portfolio || undefined,
+      phone:       app.phone,
+      isActive:    true,
+      isAvailable: true,
+    });
+
+    app.userId = user._id;
+    app.status = 'aceptada';
+    await app.save();
+
+    res.json({ application: app, user: user.toSafeJSON(), tempPassword });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/applications/:id/reject — Rechazar postulación
+router.patch('/applications/:id/reject', async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const app = await Application.findById(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Postulación no encontrada' });
+    if (['aceptada', 'rechazada'].includes(app.status))
+      return res.status(400).json({ error: 'No se puede modificar una postulación ya cerrada' });
+
+    app.status = 'rechazada';
+    if (notes) app.notes = notes;
+    await app.save();
+
+    res.json(app);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

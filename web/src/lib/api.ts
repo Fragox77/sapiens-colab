@@ -58,8 +58,15 @@ export const adminApi = {
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}/complete`, {}),
   designers:  () => api.get<import('@/types').User[]>('/api/admin/designers'),
   applications: () => api.get<import('@/types').Application[]>('/api/admin/applications'),
+  application: (id: string) => api.get<import('@/types').Application>(`/api/admin/applications/${id}`),
   evaluate:   (id: string, data: unknown) =>
     api.patch<import('@/types').Application>(`/api/admin/applications/${id}/evaluate`, data),
+  brief:      (id: string, brief: string) =>
+    api.patch<import('@/types').Application>(`/api/admin/applications/${id}/brief`, { brief }),
+  activate:   (id: string) =>
+    api.patch<{ application: import('@/types').Application; user: import('@/types').User; tempPassword: string }>(`/api/admin/applications/${id}/activate`, {}),
+  reject:     (id: string, notes?: string) =>
+    api.patch<import('@/types').Application>(`/api/admin/applications/${id}/reject`, { notes }),
   financiero:  () => api.get<import('@/types').FinancieroReport>('/api/admin/financiero'),
   anticipo:    (id: string) =>
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}/anticipo`, {}),

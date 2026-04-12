@@ -44,7 +44,7 @@ export default function LoginPage() {
             <input
               type="email" required value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full bg-white/6 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-coral/50 text-sm"
+              className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-coral/50 text-sm"
               placeholder="tu@email.com"
             />
           </div>
@@ -53,7 +53,7 @@ export default function LoginPage() {
             <input
               type="password" required value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              className="w-full bg-white/6 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-coral/50 text-sm"
+              className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-coral/50 text-sm"
               placeholder="••••••••"
             />
           </div>

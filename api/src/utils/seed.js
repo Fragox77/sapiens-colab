@@ -4,7 +4,6 @@
 
 require('dotenv').config()
 const mongoose = require('mongoose')
-const bcrypt   = require('bcryptjs')
 
 const User        = require('../models/User')
 const Project     = require('../models/Project')
@@ -23,53 +22,12 @@ async function seed() {
   ])
   console.log('🗑  Colecciones limpiadas')
 
-  const hash = (pw) => bcrypt.hash(pw, 12)
-
-  // ─── Usuarios ────────────────────────────────────────────────────────────
-  const [admin, d1, d2, c1, c2] = await User.create([
-    {
-      name: 'Jhon Admin',
-      email: 'admin@sapienscolab.com',
-      password: await hash('Admin123!'),
-      role: 'admin',
-    },
-    {
-      name: 'Laura Diseñadora',
-      email: 'laura@sapienscolab.com',
-      password: await hash('Laura123!'),
-      role: 'disenador',
-      level: 8,
-      specialty: 'Branding',
-      portfolio: 'https://behance.net/laura',
-      isAvailable: true,
-    },
-    {
-      name: 'Carlos Motion',
-      email: 'carlos@sapienscolab.com',
-      password: await hash('Carlos123!'),
-      role: 'disenador',
-      level: 6,
-      specialty: 'Video & Motion',
-      portfolio: 'https://behance.net/carlos',
-      isAvailable: true,
-    },
-    {
-      name: 'Empresa TechCo',
-      email: 'techco@empresa.com',
-      password: await hash('Cliente123!'),
-      role: 'cliente',
-      company: 'TechCo S.A.S',
-      phone: '+57 310 123 4567',
-    },
-    {
-      name: 'Restaurante Sabor',
-      email: 'sabor@restaurante.com',
-      password: await hash('Cliente123!'),
-      role: 'cliente',
-      company: 'Restaurante El Sabor',
-      phone: '+57 315 987 6543',
-    },
-  ])
+  // ─── Usuarios — se crean individualmente para que el hook pre('save') haga el hash ──
+  const admin = await User.create({ name: 'Jhon Admin',         email: 'admin@sapienscolab.com', password: 'Admin123!',   role: 'admin' })
+  const d1    = await User.create({ name: 'Laura Diseñadora',   email: 'laura@sapienscolab.com', password: 'Laura123!',   role: 'disenador', level: 8, specialty: 'Branding',       portfolio: 'https://behance.net/laura',   isAvailable: true })
+  const d2    = await User.create({ name: 'Carlos Motion',      email: 'carlos@sapienscolab.com',password: 'Carlos123!',  role: 'disenador', level: 6, specialty: 'Video & Motion', portfolio: 'https://behance.net/carlos', isAvailable: true })
+  const c1    = await User.create({ name: 'Empresa TechCo',     email: 'techco@empresa.com',     password: 'Cliente123!', role: 'cliente',   company: 'TechCo S.A.S',          phone: '+57 310 123 4567' })
+  const c2    = await User.create({ name: 'Restaurante Sabor',  email: 'sabor@restaurante.com',  password: 'Cliente123!', role: 'cliente',   company: 'Restaurante El Sabor',  phone: '+57 315 987 6543' })
 
   console.log('👥 Usuarios creados')
 

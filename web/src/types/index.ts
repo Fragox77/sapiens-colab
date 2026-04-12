@@ -81,14 +81,32 @@ export interface QuoteResult {
   balance: number
 }
 
+export interface ApplicationScores {
+  experiencia?: number
+  portafolio?:  number
+  prueba?:      number
+  estrategia?:  number
+  softSkills?:  number
+}
+
 export interface Application {
   _id: string
   name: string
   email: string
+  phone: string
+  city: string
   role: string
-  status: string
+  experience: string
+  availability: string
+  portfolio?: string
+  motivation: string
+  status: 'recibida' | 'en-evaluacion' | 'prueba-enviada' | 'evaluada' | 'aceptada' | 'rechazada'
+  scores: ApplicationScores
   level?: number
   payRange?: string
+  briefAssigned?: string
+  notes?: string
+  userId?: string | User
   createdAt: string
 }
 

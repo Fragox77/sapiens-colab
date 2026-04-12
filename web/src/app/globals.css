@@ -18,6 +18,15 @@ body {
   color: var(--cobalt);
 }
 
+/* Fix autofill Chrome — fondo oscuro + texto blanco */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0 1000px #2d2870 inset;
+  caret-color: white;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

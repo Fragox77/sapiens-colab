@@ -16,5 +16,5 @@ export const env = {
   mongoUri: getEnv("MONGODB_URI"),
   jwtSecret: getEnv("JWT_SECRET"),
   jwtExpiresIn: getEnv("JWT_EXPIRES_IN", "7d"),
-  clientUrl: getEnv("CLIENT_URL", "http://localhost:3000")
+  clientUrl: getEnv("WEB_URL", "http://localhost:3000")
 };
