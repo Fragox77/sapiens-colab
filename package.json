@@ -1,0 +1,19 @@
+{
+  "name": "sapiens-colab",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:api": "npm run dev --workspace=api",
+    "build": "npm run build --workspace=web",
+    "install:all": "npm install && npm install --workspace=web && npm install --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
