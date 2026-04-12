@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login, register, saveSession } from "@/lib/auth";
+import { saveSession, dashboardPath } from "@/lib/auth";
+import { authApi } from "@/lib/api";
 
 type Mode = "login" | "register";
 
@@ -39,19 +40,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       const response = isRegister
-        ? await register({
+        ? await authApi.register({
             name: form.name,
             email: form.email,
             password: form.password,
-            role: form.role as "client" | "designer" | "admin"
           })
-        : await login({
-            email: form.email,
-            password: form.password
-          });
+        : await authApi.login(form.email, form.password);
 
-      saveSession(response.data);
-      router.push("/dashboard");
+      saveSession(response.token, response.user);
+      router.push(dashboardPath(response.user.role));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo salió mal");
     } finally {
