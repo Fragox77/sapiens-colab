@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { HowWeWorkSection } from '@/components/public/HowWeWorkSection'
+import { DifferentiatorSection } from '@/components/public/DifferentiatorSection'
+import { ResultsSection } from '@/components/public/ResultsSection'
 
 const reveal = {
   hidden: { opacity: 0, y: 24 },
@@ -113,6 +116,10 @@ export default function MarketingHomePage() {
           </motion.aside>
         </div>
       </section>
+
+      <HowWeWorkSection />
+      <DifferentiatorSection />
+      <ResultsSection />
     </main>
   )
 }
