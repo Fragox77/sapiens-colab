@@ -78,3 +78,8 @@ export const servicesApi = {
   quote: (data: { serviceType: string; complexity: string; urgency: string }) =>
     api.post<import('@/types').QuoteResult>('/api/services/quote', data),
 }
+
+export const quotesApi = {
+  create: (data: { serviceType: string; complexity: string; urgency: string }) =>
+    api.post<import('@/types').QuoteResult>('/api/quotes', data),
+}

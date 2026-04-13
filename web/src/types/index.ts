@@ -79,6 +79,7 @@ export interface QuoteResult {
   total: number
   anticipo: number
   balance: number
+  commission: number
 }
 
 export interface ApplicationScores {

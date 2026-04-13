@@ -58,6 +58,7 @@ app.use('/api/projects', require('./src/routes/projects'));
 app.use('/api/users',    require('./src/routes/users'));
 app.use('/api/admin',    require('./src/routes/admin'));
 app.use('/api/services', require('./src/routes/services'));
+app.use('/api/quotes',   require('./src/routes/quotes'));
 app.use('/api/applications', require('./src/routes/applications'));
 app.use('/api/upload',      require('./src/routes/upload'));
 
