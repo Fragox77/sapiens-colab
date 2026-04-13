@@ -19,6 +19,16 @@ const reveal = {
   }),
 }
 
+const heroStagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+}
+
 export default function MarketingHomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0F172A] text-slate-100">
@@ -30,12 +40,15 @@ export default function MarketingHomePage() {
       </div>
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
-        <div className="grid w-full gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={heroStagger}
+          className="grid w-full gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-end"
+        >
           <div>
             <motion.p
-              initial="hidden"
-              animate="show"
-              custom={0.05}
+              custom={0}
               variants={reveal}
               className="mb-6 inline-flex rounded-full border border-white/20 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-white/80"
             >
@@ -43,9 +56,7 @@ export default function MarketingHomePage() {
             </motion.p>
 
             <motion.h1
-              initial="hidden"
-              animate="show"
-              custom={0.12}
+              custom={0}
               variants={reveal}
               className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[5.2rem]"
             >
@@ -53,9 +64,7 @@ export default function MarketingHomePage() {
             </motion.h1>
 
             <motion.p
-              initial="hidden"
-              animate="show"
-              custom={0.2}
+              custom={0}
               variants={reveal}
               className="mt-8 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg"
             >
@@ -64,9 +73,7 @@ export default function MarketingHomePage() {
             </motion.p>
 
             <motion.div
-              initial="hidden"
-              animate="show"
-              custom={0.28}
+              custom={0}
               variants={reveal}
               className="mt-10 flex flex-col gap-4 sm:flex-row"
             >
@@ -87,11 +94,9 @@ export default function MarketingHomePage() {
 
           <motion.aside
             id="proyectos"
-            initial="hidden"
-            animate="show"
-            custom={0.35}
+            custom={0}
             variants={reveal}
-            className="rounded-3xl border border-white/15 bg-white/5 p-7 backdrop-blur-xl sm:p-8"
+            className="rounded-3xl border border-white/15 bg-white/5 p-7 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_20px_50px_rgba(2,8,23,0.45)] sm:p-8"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Enfoque</p>
             <p className="mt-4 text-2xl font-medium leading-tight text-white sm:text-3xl">
@@ -114,7 +119,7 @@ export default function MarketingHomePage() {
               </div>
             </div>
           </motion.aside>
-        </div>
+        </motion.div>
       </section>
 
       <HowWeWorkSection />

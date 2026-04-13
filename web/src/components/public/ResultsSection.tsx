@@ -2,6 +2,25 @@
 
 import { motion } from 'framer-motion'
 
+const metricsStagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.06,
+    },
+  },
+}
+
+const metricReveal = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
 const metrics = [
   { value: '3x', label: 'mas velocidad de ejecucion' },
   { value: '+42', label: 'proyectos activos acompanados' },
@@ -27,21 +46,26 @@ export function ResultsSection() {
         </p>
       </motion.div>
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.35 }}
+        variants={metricsStagger}
+        className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
         {metrics.map((metric, index) => (
           <motion.article
             key={metric.label}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.55, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+            variants={metricReveal}
+            transition={{ delay: index * 0.02 }}
+            whileHover={{ y: -4, scale: 1.01 }}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_8px_24px_rgba(2,8,23,0.18)] transition-shadow duration-300 hover:border-white/20 hover:shadow-[0_16px_38px_rgba(2,8,23,0.32)]"
           >
             <p className="text-4xl font-semibold tracking-tight text-white">{metric.value}</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">{metric.label}</p>
           </motion.article>
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }

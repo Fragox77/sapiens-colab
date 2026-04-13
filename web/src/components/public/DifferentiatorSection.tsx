@@ -2,6 +2,25 @@
 
 import { motion } from 'framer-motion'
 
+const cardsStagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.06,
+    },
+  },
+}
+
+const cardReveal = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
 const pillars = [
   {
     title: 'Direccion estrategica',
@@ -43,21 +62,26 @@ export function DifferentiatorSection() {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.35 }}
+          variants={cardsStagger}
+          className="grid gap-4 sm:grid-cols-2"
+        >
           {pillars.map((pillar, index) => (
             <motion.article
               key={pillar.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.55, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-2xl border border-white/10 bg-[#0C1326]/70 p-5"
+              variants={cardReveal}
+              transition={{ delay: index * 0.02 }}
+              whileHover={{ y: -4, scale: 1.01 }}
+              className="rounded-2xl border border-white/10 bg-[#0C1326]/70 p-5 shadow-[0_8px_24px_rgba(2,8,23,0.2)] transition-shadow duration-300 hover:border-white/20 hover:shadow-[0_16px_40px_rgba(2,8,23,0.35)]"
             >
               <h3 className="text-lg font-semibold text-white">{pillar.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">{pillar.text}</p>
             </motion.article>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
     </section>
   )

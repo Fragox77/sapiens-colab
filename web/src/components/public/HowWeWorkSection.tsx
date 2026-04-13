@@ -2,6 +2,25 @@
 
 import { motion } from 'framer-motion'
 
+const sectionStagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+}
+
+const itemReveal = {
+  hidden: { opacity: 0, y: 18 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
 const steps = [
   {
     title: 'Diagnostico y claridad',
@@ -35,22 +54,27 @@ export function HowWeWorkSection() {
         </p>
       </motion.div>
 
-      <div className="mt-12 grid gap-5 md:grid-cols-3">
+      <motion.div
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.25 }}
+        variants={sectionStagger}
+        className="mt-12 grid gap-5 md:grid-cols-3"
+      >
         {steps.map((step, index) => (
           <motion.article
             key={step.title}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.6, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-7"
+            variants={itemReveal}
+            transition={{ delay: index * 0.03 }}
+            whileHover={{ y: -6, scale: 1.01 }}
+            className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_8px_30px_rgba(2,8,23,0.2)] transition-shadow duration-300 hover:border-white/20 hover:shadow-[0_18px_45px_rgba(2,8,23,0.38)] sm:p-7"
           >
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">0{index + 1}</p>
             <h3 className="mt-4 text-2xl font-semibold leading-tight text-white">{step.title}</h3>
             <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">{step.text}</p>
           </motion.article>
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }
