@@ -82,6 +82,33 @@ export interface QuoteResult {
   commission: number
 }
 
+export interface QuoteLeadInput {
+  name: string
+  email: string
+  company?: string
+}
+
+export interface QuoteCreationResponse {
+  success: boolean
+  message: string
+  data: {
+    quoteId: string
+    projectId: string
+    leadStatus: 'nuevo' | 'contactado' | 'calificado' | 'convertido' | 'descartado'
+    leadScore: number
+    pricing: Pricing
+    project: {
+      _id: string
+      title: string
+      status: ProjectStatus
+      serviceType: ServiceType
+      complexity: Complexity
+      urgency: Urgency
+      createdAt: string
+    }
+  }
+}
+
 export interface ApplicationScores {
   experiencia?: number
   portafolio?:  number

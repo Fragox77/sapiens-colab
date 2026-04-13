@@ -3,7 +3,12 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { quotesApi } from '@/lib/api'
-import type { Complexity, QuoteResult, ServiceType, Urgency } from '@/types'
+import type {
+  Complexity,
+  QuoteCreationResponse,
+  ServiceType,
+  Urgency,
+} from '@/types'
 import { PublicNavbar } from '@/components/public/PublicNavbar'
 
 const services: Array<{ value: ServiceType; label: string }> = [
@@ -37,12 +42,16 @@ function formatMoney(value: number) {
 }
 
 export default function CotizarPage() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [company, setCompany] = useState('')
   const [serviceType, setServiceType] = useState<ServiceType>('branding')
   const [complexity, setComplexity] = useState<Complexity>('media')
   const [urgency, setUrgency] = useState<Urgency>('normal')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [quote, setQuote] = useState<QuoteResult | null>(null)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [quote, setQuote] = useState<QuoteCreationResponse['data'] | null>(null)
 
   const selectedLabel = useMemo(
     () => services.find((s) => s.value === serviceType)?.label ?? 'Servicio',
@@ -53,10 +62,21 @@ export default function CotizarPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccessMessage('')
 
     try {
-      const result = await quotesApi.calculateV1({ serviceType, complexity, urgency })
-      setQuote(result)
+      const result = await quotesApi.create({
+        client: {
+          name,
+          email,
+          company,
+        },
+        serviceType,
+        complexity,
+        urgency,
+      })
+      setQuote(result.data)
+      setSuccessMessage(result.message)
     } catch (err) {
       setQuote(null)
       setError(err instanceof Error ? err.message : 'No fue posible generar la cotizacion')
@@ -81,10 +101,47 @@ export default function CotizarPage() {
             Cotiza tu proyecto
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            Selecciona servicio, complejidad y urgencia. Obtendras un estimado inmediato para tomar decisiones con claridad.
+            Captura tus datos y selecciona servicio, complejidad y urgencia. Tu lead quedara registrado y se creara un proyecto en estado Cotizado automaticamente.
           </p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-slate-400">Nombre</span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Tu nombre"
+                  className="w-full rounded-xl border border-white/15 bg-[#111B31] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-slate-400">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="nombre@empresa.com"
+                  className="w-full rounded-xl border border-white/15 bg-[#111B31] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-slate-400">Empresa</span>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Nombre de empresa"
+                  className="w-full rounded-xl border border-white/15 bg-[#111B31] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/60"
+                />
+              </label>
+            </div>
+
             <label className="block">
               <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-slate-400">Servicio</span>
               <select
@@ -137,12 +194,18 @@ export default function CotizarPage() {
               disabled={loading}
               className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Calculando...' : 'Calcular cotizacion'}
+              {loading ? 'Generando cotizacion...' : 'Enviar y generar proyecto'}
             </button>
 
             {error && (
               <p className="rounded-xl border border-rose-300/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
                 {error}
+              </p>
+            )}
+
+            {successMessage && (
+              <p className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+                {successMessage}
               </p>
             )}
           </form>
@@ -173,9 +236,12 @@ export default function CotizarPage() {
 
           {quote && !loading && (
             <div className="mt-6 grid gap-3">
-              <ResultRow label="Total" value={formatMoney(quote.total)} highlight />
-              <ResultRow label="IVA" value={formatMoney(quote.iva)} />
-              <ResultRow label="Utilidad" value={formatMoney(quote.commission)} />
+              <ResultRow label="Total" value={formatMoney(quote.pricing.total)} highlight />
+              <ResultRow label="IVA" value={formatMoney(quote.pricing.iva)} />
+              <ResultRow label="Utilidad" value={formatMoney(quote.pricing.commission)} />
+              <ResultRow label="Lead score" value={`${quote.leadScore}/100`} />
+              <ResultRow label="Estado proyecto" value={quote.project.status} />
+              <ResultRow label="Proyecto" value={quote.project.title} />
             </div>
           )}
         </motion.aside>

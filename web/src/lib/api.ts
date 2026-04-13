@@ -80,8 +80,12 @@ export const servicesApi = {
 }
 
 export const quotesApi = {
-  create: (data: { serviceType: string; complexity: string; urgency: string }) =>
-    api.post<import('@/types').QuoteResult>('/api/quotes', data),
+  create: (data: {
+    client: { name: string; email: string; company?: string }
+    serviceType: string
+    complexity: string
+    urgency: string
+  }) => api.post<import('@/types').QuoteCreationResponse>('/api/quotes', data),
   calculateV1: (data: {
     serviceType: string
     complexity: string
