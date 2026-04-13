@@ -19,6 +19,15 @@ const fmt = (n: number) =>
 
 type Tab = 'pagos' | 'liquidaciones' | 'ingresos'
 type BillingPlan = 'basic' | 'pro' | 'enterprise'
+type BillingOverview = {
+  tenantId: string
+  plan: string
+  commissionRate: number
+  seats: number
+  maxActiveProjects: number
+  monthlyFee: number
+  model: string
+}
 
 const DEFAULT_PLANS: BillingPlan[] = ['basic', 'pro', 'enterprise']
 
@@ -36,8 +45,22 @@ export default function FinancieroAdminPage() {
   const [previewProjects, setPreviewProjects] = useState(12)
   const [previewTicket, setPreviewTicket] = useState(1800000)
   const [previewResult, setPreviewResult] = useState<{ commissionRevenue: number; projectedMRR: number; monthlyFee: number } | null>(null)
+  const [overview, setOverview] = useState<BillingOverview | null>(null)
   const [savingPlan, setSavingPlan] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const isPlanSynced = Boolean(activePlan && activePlan === previewPlan)
+
+  async function loadBillingOverview() {
+    try {
+      const data = await billingApi.overview()
+      setOverview(data)
+      if (DEFAULT_PLANS.includes(data.plan as BillingPlan)) {
+        setActivePlan(data.plan as BillingPlan)
+      }
+    } catch {
+      setOverview(null)
+    }
+  }
 
   async function load() {
     try {
@@ -84,8 +107,15 @@ export default function FinancieroAdminPage() {
     }
 
     loadOverviewPlan()
+    loadBillingOverview()
     loadPlans()
   }, [])
+
+  useEffect(() => {
+    if (!saveMessage) return
+    const timer = setTimeout(() => setSaveMessage(''), 4000)
+    return () => clearTimeout(timer)
+  }, [saveMessage])
 
   useEffect(() => {
     async function runPreview() {
@@ -135,6 +165,7 @@ export default function FinancieroAdminPage() {
     try {
       await billingApi.changePlan(previewPlan)
       setActivePlan(previewPlan)
+      await loadBillingOverview()
       await load()
       setSaveMessage('Plan guardado correctamente.')
     } catch (err) {
@@ -182,6 +213,13 @@ export default function FinancieroAdminPage() {
           <span className="inline-flex items-center rounded-full bg-cobalt/10 text-cobalt px-2.5 py-1 text-xs font-semibold">
             {(activePlan || previewPlan).charAt(0).toUpperCase() + (activePlan || previewPlan).slice(1)}
           </span>
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+              isPlanSynced ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
+            }`}
+          >
+            {isPlanSynced ? 'Sincronizado' : 'Desactualizado'}
+          </span>
           {activePlan && activePlan !== previewPlan && (
             <span className="text-xs text-orange-600">Tienes cambios sin guardar</span>
           )}
@@ -215,6 +253,17 @@ export default function FinancieroAdminPage() {
           <p className={`mt-2 text-xs ${saveMessage.includes('correctamente') ? 'text-emerald-600' : 'text-red-500'}`}>
             {saveMessage}
           </p>
+        )}
+        {overview && (
+          <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+              <div><span className="text-gray-500 block">Fee real</span><span className="font-semibold text-cobalt">{fmt(overview.monthlyFee)}</span></div>
+              <div><span className="text-gray-500 block">Comisión real</span><span className="font-semibold text-cobalt">{Math.round(overview.commissionRate * 100)}%</span></div>
+              <div><span className="text-gray-500 block">Seats</span><span className="font-semibold text-cobalt">{overview.seats}</span></div>
+              <div><span className="text-gray-500 block">Proyectos activos</span><span className="font-semibold text-cobalt">{overview.maxActiveProjects}</span></div>
+              <div><span className="text-gray-500 block">Modelo</span><span className="font-semibold text-cobalt">{overview.model}</span></div>
+            </div>
+          </div>
         )}
         {previewResult && (
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
