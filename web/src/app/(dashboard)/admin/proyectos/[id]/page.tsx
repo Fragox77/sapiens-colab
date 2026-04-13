@@ -15,13 +15,13 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  cotizado:   'bg-yellow-100 text-yellow-800',
-  activo:     'bg-blue-100 text-blue-800',
-  revision:   'bg-purple-100 text-purple-800',
-  ajuste:     'bg-orange-100 text-orange-800',
-  aprobado:   'bg-green-100 text-green-800',
-  completado: 'bg-gray-100 text-gray-700',
-  cancelado:  'bg-red-100 text-red-800',
+  cotizado:   'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30',
+  activo:     'bg-blue-500/15 text-blue-300 border border-blue-500/30',
+  revision:   'bg-violet-500/15 text-violet-300 border border-violet-500/30',
+  ajuste:     'bg-orange-500/15 text-orange-300 border border-orange-500/30',
+  aprobado:   'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
+  completado: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
+  cancelado:  'bg-rose-500/15 text-rose-300 border border-rose-500/30',
 }
 
 const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
@@ -78,7 +78,7 @@ export default function AdminProyectoPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <p className="text-gray-400 text-sm">Cargando...</p>
+      <p className="text-slate-400 text-sm">Cargando...</p>
     </div>
   )
 
@@ -94,13 +94,13 @@ export default function AdminProyectoPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <a href="/admin/proyectos" className="text-xs text-gray-400 hover:text-coral transition-colors mb-3 inline-block">
+        <a href="/admin/proyectos" className="mb-3 inline-block text-xs text-slate-400 transition-colors hover:text-[#A5B4FC]">
           ← Todos los proyectos
         </a>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-cobalt">{p.title}</h1>
-            <p className="text-sm text-gray-400 mt-1 capitalize">{p.serviceType} · {p.complexity} · {p.urgency}</p>
+            <h1 className="text-3xl font-bold text-slate-100">{p.title}</h1>
+            <p className="mt-1 text-sm capitalize text-slate-400">{p.serviceType} · {p.complexity} · {p.urgency}</p>
           </div>
           <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[p.status]}`}>
             {STATUS_LABEL[p.status]}
@@ -110,32 +110,32 @@ export default function AdminProyectoPage() {
 
       {/* Partes */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Cliente</div>
+        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4">
+          <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Cliente</div>
           {client ? (
             <>
-              <div className="font-semibold text-cobalt text-sm">{client.name}</div>
-              <div className="text-xs text-gray-400">{client.company || client.email}</div>
+              <div className="text-sm font-semibold text-slate-100">{client.name}</div>
+              <div className="text-xs text-slate-400">{client.company || client.email}</div>
             </>
-          ) : <div className="text-sm text-gray-300">—</div>}
+          ) : <div className="text-sm text-slate-500">—</div>}
         </div>
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Diseñador</div>
+        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4">
+          <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Diseñador</div>
           {designer ? (
             <>
-              <div className="font-semibold text-cobalt text-sm">{designer.name}</div>
-              <div className="text-xs text-gray-400">Nivel {designer.level} · {designer.specialty}</div>
+              <div className="text-sm font-semibold text-slate-100">{designer.name}</div>
+              <div className="text-xs text-slate-400">Nivel {designer.level} · {designer.specialty}</div>
             </>
-          ) : <div className="text-sm text-gray-300">Sin asignar</div>}
+          ) : <div className="text-sm text-slate-500">Sin asignar</div>}
         </div>
       </div>
 
       {/* Brief */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Brief</h2>
-        <p className="text-sm text-cobalt whitespace-pre-line">{p.description}</p>
+      <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Brief</h2>
+        <p className="whitespace-pre-line text-sm text-slate-200">{p.description}</p>
         {p.format && (
-          <p className="text-xs text-gray-400 mt-3"><span className="font-medium">Formatos:</span> {p.format}</p>
+          <p className="mt-3 text-xs text-slate-400"><span className="font-medium">Formatos:</span> {p.format}</p>
         )}
       </div>
 
@@ -161,13 +161,13 @@ export default function AdminProyectoPage() {
 
       {/* Asignar diseñador */}
       {p.status === 'cotizado' && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-cobalt mb-3">Asignar diseñador</h2>
+        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
+          <h2 className="mb-3 text-sm font-semibold text-slate-100">Asignar diseñador</h2>
           <div className="flex gap-3">
             <select
               value={selectedDesigner}
               onChange={e => setSelectedDesigner(e.target.value)}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cobalt/40"
+              className="flex-1 rounded-lg border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-[#4C58FF]"
             >
               <option value="">Selecciona diseñador...</option>
               {designers
@@ -182,7 +182,7 @@ export default function AdminProyectoPage() {
             <button
               onClick={handleAssign}
               disabled={!selectedDesigner || assigning}
-              className="bg-cobalt text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-cobalt-mid transition-colors disabled:opacity-50"
+              className="rounded-lg bg-[#4C58FF] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#5A66FF] disabled:opacity-50"
             >
               {assigning ? 'Asignando...' : 'Asignar'}
             </button>
@@ -214,20 +214,20 @@ export default function AdminProyectoPage() {
 
       {/* Entregables */}
       {p.deliverables.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Entregables ({p.deliverables.length})
           </h2>
           <div className="space-y-2">
             {p.deliverables.map((d, i) => (
               <a key={i} href={d.url} target="_blank" rel="noreferrer"
-                className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-cobalt/20 transition-colors">
+                className="flex items-center gap-3 rounded-lg border border-[#2F3A5C] bg-[#0F172A] p-3 transition-colors hover:border-[#4C58FF]/40">
                 <span>📎</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-cobalt truncate">{d.name}</div>
-                  <div className="text-xs text-gray-400">Ronda {d.round}</div>
+                  <div className="truncate text-sm font-medium text-slate-100">{d.name}</div>
+                  <div className="text-xs text-slate-400">Ronda {d.round}</div>
                 </div>
-                <span className="text-xs text-coral font-medium">Ver →</span>
+                <span className="text-xs font-medium text-[#A5B4FC]">Ver →</span>
               </a>
             ))}
           </div>
@@ -235,23 +235,23 @@ export default function AdminProyectoPage() {
       )}
 
       {/* Revisiones */}
-      <div className="text-xs text-gray-400">
+      <div className="text-xs text-slate-400">
         Revisiones: {p.revisions.used}/{p.revisions.max}
-        {p.revisions.extra > 0 && <span className="ml-2 text-coral">{p.revisions.extra} extra(s)</span>}
+        {p.revisions.extra > 0 && <span className="ml-2 text-rose-300">{p.revisions.extra} extra(s)</span>}
       </div>
 
       {/* Timeline */}
       {p.timeline.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Historial</h2>
+        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Historial</h2>
           <div className="space-y-3">
             {[...p.timeline].reverse().map((t, i) => (
               <div key={i} className="flex gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-cobalt/30 mt-2 flex-shrink-0" />
+                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#7280FF]" />
                 <div>
-                  <div className="text-xs font-medium text-cobalt">{t.action.replace(/_/g, ' ')}</div>
-                  {t.message && <div className="text-xs text-gray-400 mt-0.5">{t.message}</div>}
-                  <div className="text-xs text-gray-300 mt-0.5">
+                  <div className="text-xs font-medium text-slate-200">{t.action.replace(/_/g, ' ')}</div>
+                  {t.message && <div className="mt-0.5 text-xs text-slate-400">{t.message}</div>}
+                  <div className="mt-0.5 text-xs text-slate-500">
                     {new Date(t.createdAt).toLocaleString('es-CO')}
                   </div>
                 </div>

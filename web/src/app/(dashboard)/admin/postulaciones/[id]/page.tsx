@@ -20,12 +20,12 @@ const PAY_RANGES: Record<number, string> = {
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  'recibida':       { label: 'Recibida',       color: 'bg-gray-100 text-gray-600' },
-  'en-evaluacion':  { label: 'En evaluación',  color: 'bg-blue-100 text-blue-700' },
-  'prueba-enviada': { label: 'Prueba enviada', color: 'bg-yellow-100 text-yellow-700' },
-  'evaluada':       { label: 'Evaluada',       color: 'bg-purple-100 text-purple-700' },
-  'aceptada':       { label: 'Aceptada',       color: 'bg-green-100 text-green-700' },
-  'rechazada':      { label: 'Rechazada',      color: 'bg-red-100 text-red-700' },
+  'recibida':       { label: 'Recibida',       color: 'bg-slate-500/20 text-slate-300 border border-slate-500/30' },
+  'en-evaluacion':  { label: 'En evaluacion',  color: 'bg-blue-500/15 text-blue-300 border border-blue-500/30' },
+  'prueba-enviada': { label: 'Prueba enviada', color: 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30' },
+  'evaluada':       { label: 'Evaluada',       color: 'bg-violet-500/15 text-violet-300 border border-violet-500/30' },
+  'aceptada':       { label: 'Aceptada',       color: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' },
+  'rechazada':      { label: 'Rechazada',      color: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' },
 }
 
 function calcLevel(scores: Record<string, number>): number {
@@ -141,25 +141,25 @@ export default function PostulacionDetailPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-64">
-      <div className="text-gray-400 text-sm">Cargando postulación...</div>
+      <div className="text-slate-400 text-sm">Cargando postulación...</div>
     </div>
   )
 
   if (error || !app) return (
     <div className="text-center py-16">
       <div className="text-red-500 text-sm mb-4">{error || 'No encontrada'}</div>
-      <button onClick={() => router.back()} className="text-cobalt text-sm underline">Volver</button>
+      <button onClick={() => router.back()} className="text-[#A5B4FC] text-sm underline">Volver</button>
     </div>
   )
 
-  const statusMeta = STATUS_META[app.status] ?? { label: app.status, color: 'bg-gray-100 text-gray-600' }
+  const statusMeta = STATUS_META[app.status] ?? { label: app.status, color: 'bg-slate-500/20 text-slate-300 border border-slate-500/30' }
 
   return (
     <div className="max-w-4xl">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-cobalt transition-colors text-sm">
+          <button onClick={() => router.back()} className="text-sm text-slate-400 transition-colors hover:text-[#A5B4FC]">
             ← Postulaciones
           </button>
         </div>
@@ -169,13 +169,13 @@ export default function PostulacionDetailPage() {
         {/* Columna izquierda: info del postulante */}
         <div className="lg:col-span-1 space-y-4">
           {/* Tarjeta principal */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-cobalt/10 flex items-center justify-center text-cobalt font-black text-lg flex-shrink-0">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#4C58FF]/20 text-lg font-black text-[#A5B4FC]">
                 {app.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="font-bold text-cobalt">{app.name}</div>
+                <div className="font-bold text-slate-100">{app.name}</div>
                 <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusMeta.color}`}>
                   {statusMeta.label}
                 </span>
@@ -184,28 +184,28 @@ export default function PostulacionDetailPage() {
 
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Email</span>
-                <span className="text-cobalt font-medium truncate ml-2">{app.email}</span>
+                <span className="text-slate-400">Email</span>
+                <span className="ml-2 truncate font-medium text-slate-200">{app.email}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Teléfono</span>
-                <span className="text-cobalt font-medium">{app.phone}</span>
+                <span className="text-slate-400">Teléfono</span>
+                <span className="font-medium text-slate-200">{app.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Ciudad</span>
-                <span className="text-cobalt font-medium">{app.city}</span>
+                <span className="text-slate-400">Ciudad</span>
+                <span className="font-medium text-slate-200">{app.city}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Rol</span>
-                <span className="text-cobalt font-medium capitalize">{app.role}</span>
+                <span className="text-slate-400">Rol</span>
+                <span className="font-medium capitalize text-slate-200">{app.role}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Experiencia</span>
-                <span className="text-cobalt font-medium">{app.experience} años</span>
+                <span className="text-slate-400">Experiencia</span>
+                <span className="font-medium text-slate-200">{app.experience} años</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Disponibilidad</span>
-                <span className="text-cobalt font-medium capitalize">{app.availability}</span>
+                <span className="text-slate-400">Disponibilidad</span>
+                <span className="font-medium capitalize text-slate-200">{app.availability}</span>
               </div>
               {app.portfolio && (
                 <div className="pt-1">
@@ -213,7 +213,7 @@ export default function PostulacionDetailPage() {
                     href={app.portfolio}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-coral underline break-all"
+                    className="break-all text-xs text-[#A5B4FC] underline"
                   >
                     Ver portafolio
                   </a>
@@ -221,9 +221,9 @@ export default function PostulacionDetailPage() {
               )}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-50">
-              <div className="text-xs text-gray-400 mb-1.5">Motivación</div>
-              <p className="text-xs text-gray-600 leading-relaxed">{app.motivation}</p>
+            <div className="mt-4 border-t border-[#2F3A5C] pt-4">
+              <div className="mb-1.5 text-xs text-slate-400">Motivación</div>
+              <p className="text-xs leading-relaxed text-slate-300">{app.motivation}</p>
             </div>
           </div>
 
@@ -242,9 +242,9 @@ export default function PostulacionDetailPage() {
 
           {/* Brief asignado */}
           {app.briefAssigned && (
-            <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-5">
-              <div className="text-xs font-semibold text-yellow-700 mb-2">Brief asignado</div>
-              <p className="text-xs text-yellow-800 leading-relaxed whitespace-pre-wrap">{app.briefAssigned}</p>
+            <div className="rounded-2xl border border-yellow-500/25 bg-yellow-500/10 p-5">
+              <div className="mb-2 text-xs font-semibold text-yellow-300">Brief asignado</div>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-yellow-200">{app.briefAssigned}</p>
             </div>
           )}
 
@@ -264,15 +264,15 @@ export default function PostulacionDetailPage() {
         {/* Columna derecha: evaluación y acciones */}
         <div className="lg:col-span-2 space-y-5">
           {/* Panel de evaluación */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="font-bold text-cobalt mb-4">Evaluación por pilares</h2>
+          <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
+            <h2 className="mb-4 font-bold text-slate-100">Evaluación por pilares</h2>
 
             <div className="space-y-5 mb-5">
               {SCORE_FIELDS.map(f => (
                 <div key={f.key}>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-gray-500">{f.label} <span className="text-gray-300">({f.weight})</span></span>
-                    <span className="font-bold text-cobalt">{scores[f.key] ?? 0}</span>
+                    <span className="text-slate-400">{f.label} <span className="text-slate-500">({f.weight})</span></span>
+                    <span className="font-bold text-slate-100">{scores[f.key] ?? 0}</span>
                   </div>
                   <input
                     type="range" min={0} max={10} step={1}
@@ -281,7 +281,7 @@ export default function PostulacionDetailPage() {
                     onChange={e => setScores(s => ({ ...s, [f.key]: Number(e.target.value) }))}
                     className="w-full accent-coral disabled:opacity-50"
                   />
-                  <div className="flex justify-between text-xs text-gray-200 mt-0.5">
+                  <div className="mt-0.5 flex justify-between text-xs text-slate-500">
                     <span>0</span><span>5</span><span>10</span>
                   </div>
                 </div>
@@ -289,14 +289,14 @@ export default function PostulacionDetailPage() {
             </div>
 
             {/* Preview nivel */}
-            <div className="bg-cobalt/5 rounded-xl p-4 mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-[#2F3A5C] bg-[#0F172A] p-4">
               <div>
-                <div className="text-cobalt/50 text-xs">Nivel calculado</div>
-                <div className="text-3xl font-black text-cobalt">{previewLevel} <span className="text-sm font-normal text-cobalt/40">/ 10</span></div>
+                <div className="text-xs text-slate-500">Nivel calculado</div>
+                <div className="text-3xl font-black text-slate-100">{previewLevel} <span className="text-sm font-normal text-slate-500">/ 10</span></div>
               </div>
               <div className="text-right">
-                <div className="text-cobalt/50 text-xs mb-0.5">Rango de pago</div>
-                <div className="text-cobalt text-sm font-semibold">{PAY_RANGES[previewLevel]}</div>
+                <div className="mb-0.5 text-xs text-slate-500">Rango de pago</div>
+                <div className="text-sm font-semibold text-slate-200">{PAY_RANGES[previewLevel]}</div>
               </div>
             </div>
 
@@ -307,17 +307,17 @@ export default function PostulacionDetailPage() {
               disabled={isClosed}
               onChange={e => setNotes(e.target.value)}
               placeholder="Notas internas sobre el postulante..."
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/30 resize-none mb-4 disabled:bg-gray-50 disabled:text-gray-400"
+              className="mb-4 w-full resize-none rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF] disabled:bg-[#0F172A] disabled:text-slate-500"
             />
 
             {/* Estado */}
             <div className="mb-4">
-              <label className="text-xs text-gray-400 uppercase tracking-wide mb-1.5 block">Estado</label>
+              <label className="mb-1.5 block text-xs uppercase tracking-wide text-slate-400">Estado</label>
               <select
                 value={evalStatus}
                 disabled={isClosed}
                 onChange={e => setEvalStatus(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-cobalt/30 disabled:bg-gray-50 disabled:text-gray-400"
+                className="w-full rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-[#4C58FF] disabled:bg-[#0F172A] disabled:text-slate-500"
               >
                 <option value="recibida">Recibida</option>
                 <option value="en-evaluacion">En evaluación</option>
@@ -336,7 +336,7 @@ export default function PostulacionDetailPage() {
               <button
                 onClick={handleSaveEval}
                 disabled={savingEval}
-                className="w-full bg-cobalt text-white py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full rounded-xl bg-[#4C58FF] py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {savingEval ? 'Guardando...' : 'Guardar evaluación'}
               </button>
@@ -345,13 +345,13 @@ export default function PostulacionDetailPage() {
 
           {/* Asignar brief */}
           {!isClosed && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-cobalt">Brief de prueba técnica</h2>
+                <h2 className="font-bold text-slate-100">Brief de prueba técnica</h2>
                 {!showBriefForm && (
                   <button
                     onClick={() => { setShowBriefForm(true); setBriefText(app.briefAssigned ?? '') }}
-                    className="text-xs text-cobalt border border-cobalt/20 px-3 py-1.5 rounded-lg hover:bg-cobalt/5 transition-colors"
+                    className="rounded-lg border border-[#4C58FF]/40 px-3 py-1.5 text-xs text-[#A5B4FC] transition-colors hover:bg-[#4C58FF]/15"
                   >
                     {app.briefAssigned ? 'Editar brief' : '+ Asignar brief'}
                   </button>
@@ -359,7 +359,7 @@ export default function PostulacionDetailPage() {
               </div>
 
               {!showBriefForm && !app.briefAssigned && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-400">
                   Asigna un brief de prueba técnica para evaluar las capacidades del postulante.
                   Esto cambiará el estado a &quot;Prueba enviada&quot;.
                 </p>
@@ -372,7 +372,7 @@ export default function PostulacionDetailPage() {
                     value={briefText}
                     onChange={e => setBriefText(e.target.value)}
                     placeholder="Describe el brief de prueba técnica que debe resolver el postulante..."
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/30 resize-none mb-3"
+                    className="mb-3 w-full resize-none rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF]"
                     autoFocus
                   />
                   {briefError && (
@@ -381,7 +381,7 @@ export default function PostulacionDetailPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowBriefForm(false)}
-                      className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50 transition-colors"
+                      className="flex-1 rounded-xl border border-[#334167] py-2 text-sm text-slate-300 transition-colors hover:bg-[#1B2642]"
                     >
                       Cancelar
                     </button>
@@ -400,9 +400,9 @@ export default function PostulacionDetailPage() {
 
           {/* Acciones finales: Activar / Rechazar */}
           {!isClosed && app.level && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h2 className="font-bold text-cobalt mb-1">Decisión final</h2>
-              <p className="text-xs text-gray-400 mb-4">
+            <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
+              <h2 className="mb-1 font-bold text-slate-100">Decisión final</h2>
+              <p className="mb-4 text-xs text-slate-400">
                 El postulante tiene nivel {app.level}. Activa su cuenta o rechaza la postulación.
               </p>
 

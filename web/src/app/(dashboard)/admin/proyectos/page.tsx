@@ -14,13 +14,13 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  cotizado:   'bg-yellow-100 text-yellow-800',
-  activo:     'bg-blue-100 text-blue-800',
-  revision:   'bg-purple-100 text-purple-800',
-  ajuste:     'bg-orange-100 text-orange-800',
-  aprobado:   'bg-green-100 text-green-800',
-  completado: 'bg-gray-100 text-gray-600',
-  cancelado:  'bg-red-100 text-red-800',
+  cotizado:   'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30',
+  activo:     'bg-blue-500/15 text-blue-300 border border-blue-500/30',
+  revision:   'bg-violet-500/15 text-violet-300 border border-violet-500/30',
+  ajuste:     'bg-orange-500/15 text-orange-300 border border-orange-500/30',
+  aprobado:   'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
+  completado: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
+  cancelado:  'bg-rose-500/15 text-rose-300 border border-rose-500/30',
 }
 
 const FILTERS: { value: string; label: string }[] = [
@@ -59,8 +59,8 @@ export default function AdminProyectosPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-cobalt">Proyectos</h1>
-          <p className="text-sm text-gray-400 mt-1">{projects.length} en total</p>
+          <h1 className="text-3xl font-bold text-slate-100">Proyectos</h1>
+          <p className="mt-1 text-sm text-slate-400">{projects.length} en total</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export default function AdminProyectosPage() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Buscar por título, cliente o diseñador..."
-        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/30 mb-4"
+        className="mb-4 w-full rounded-xl border border-[#334167] bg-[#0F172A] px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF]"
       />
 
       {/* Filtros */}
@@ -81,8 +81,8 @@ export default function AdminProyectosPage() {
             onClick={() => setFilter(f.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               filter === f.value
-                ? 'bg-cobalt text-white'
-                : 'bg-white border border-gray-200 text-gray-500 hover:border-cobalt/30'
+                ? 'bg-[#4C58FF] text-white shadow-[0_8px_20px_rgba(76,88,255,0.35)]'
+                : 'bg-[#131B31] border border-[#2F3A5C] text-slate-300 hover:bg-[#18233F]'
             }`}
           >
             {f.label}
@@ -96,9 +96,9 @@ export default function AdminProyectosPage() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400 text-sm">Cargando proyectos...</div>
+        <div className="text-slate-400 text-sm">Cargando proyectos...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-sm">
+        <div className="py-12 text-center text-sm text-slate-400">
           No hay proyectos con este filtro.
         </div>
       ) : (
@@ -110,11 +110,11 @@ export default function AdminProyectosPage() {
               <a
                 key={p._id}
                 href={`/admin/proyectos/${p._id}`}
-                className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 p-4 hover:border-cobalt/20 transition-colors"
+                className="flex items-center gap-4 rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4 transition-colors hover:border-[#4C58FF]/40"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-cobalt text-sm truncate">{p.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-sm font-semibold text-slate-100 truncate">{p.title}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">
                     {client?.name || '—'}
                     {designer && <span> → {designer.name}</span>}
                     <span className="ml-2">· {new Date(p.createdAt).toLocaleDateString('es-CO')}</span>
@@ -122,8 +122,8 @@ export default function AdminProyectosPage() {
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-right hidden sm:block">
-                    <div className="text-sm font-bold text-cobalt">{fmt(p.pricing.total)}</div>
-                    <div className="text-xs text-gray-400">Rev. {p.revisions.used}/{p.revisions.max}</div>
+                    <div className="text-sm font-bold text-slate-100">{fmt(p.pricing.total)}</div>
+                    <div className="text-xs text-slate-400">Rev. {p.revisions.used}/{p.revisions.max}</div>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>
                     {STATUS_LABEL[p.status]}

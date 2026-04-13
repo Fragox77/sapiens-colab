@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { adminApi, metricsApi, projectsApi } from '@/lib/api'
-import { KpiCard } from '@/components/dashboard/KpiCard'
-import { StatusChart } from '@/components/dashboard/StatusChart'
-import { WeeklyEvolutionChart } from '@/components/dashboard/WeeklyEvolutionChart'
+import { TemplateCard } from '@/components/ui/template/Cards'
+import { TemplateOverviewChart, TemplateRadialBreakdown } from '@/components/ui/template/Charts'
 import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
 import type { DashboardMetrics, Project, User } from '@/types'
 
@@ -46,6 +45,7 @@ export default function AdminDashboard() {
 
   const [loading, setLoading] = useState(true)
   const [metricsLoading, setMetricsLoading] = useState(true)
+  const [metricsError, setMetricsError] = useState('')
   const [assigning, setAssigning] = useState<string | null>(null)
   const [selectedDesigner, setSelectedDesigner] = useState<Record<string, string>>({})
 
@@ -64,16 +64,24 @@ export default function AdminDashboard() {
 
   async function loadMetrics(range: Range) {
     setMetricsLoading(true)
+    setMetricsError('')
     const prevRange = previousRange(range)
 
     try {
-      const [m, mPrev] = await Promise.all([
+      const [mResult, mPrevResult] = await Promise.allSettled([
         metricsApi.dashboard({ from: range.from.toISOString(), to: range.to.toISOString() }),
         metricsApi.dashboard({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
       ])
 
-      setDashboard(m)
-      setPrevDashboard(mPrev)
+      if (mResult.status === 'fulfilled') {
+        setDashboard(mResult.value)
+      } else {
+        setMetricsError(mResult.reason instanceof Error ? mResult.reason.message : 'No se pudieron cargar las metricas.')
+      }
+
+      if (mPrevResult.status === 'fulfilled') {
+        setPrevDashboard(mPrevResult.value)
+      }
     } finally {
       setMetricsLoading(false)
     }
@@ -110,13 +118,29 @@ export default function AdminDashboard() {
 
   const pending = projects.filter(p => p.status === 'cotizado')
   const active = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
+  const topPerformer = dashboard?.talent.topPerformers?.[0]
+  const avgRevisions = projects.length > 0
+    ? Math.round((projects.reduce((sum, p) => sum + (p.revisions?.used || 0), 0) / projects.length) * 10) / 10
+    : 0
+  const completedDurations = projects
+    .filter((p) => Boolean(p.completedAt))
+    .map((p) => {
+      const start = new Date(p.createdAt).getTime()
+      const end = new Date(p.completedAt as string).getTime()
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+      return (end - start) / (1000 * 60 * 60 * 24)
+    })
+    .filter((days): days is number => days !== null)
+  const avgProjectDays = completedDurations.length > 0
+    ? Math.round((completedDurations.reduce((sum, d) => sum + d, 0) / completedDurations.length) * 10) / 10
+    : 0
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-cobalt">Panel de administración</h1>
-          <p className="text-sm text-gray-500 mt-1">Centro operativo y analítico SAPIENS COLAB</p>
+          <h1 className="text-3xl font-bold text-slate-100">Panel de administración</h1>
+          <p className="mt-1 text-sm text-slate-400">Centro operativo y analítico SAPIENS COLAB</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -125,7 +149,9 @@ export default function AdminDashboard() {
               key={item}
               onClick={() => setPreset(item)}
               className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                preset === item ? 'bg-cobalt text-white' : 'bg-white text-cobalt border border-gray-200'
+                preset === item
+                  ? 'bg-[#4C58FF] text-white shadow-[0_8px_20px_rgba(76,88,255,0.35)]'
+                  : 'bg-[#131B31] text-slate-300 border border-[#2F3A5C] hover:bg-[#18233F]'
               }`}
             >
               {item === 'custom' ? 'Personalizado' : item.toUpperCase()}
@@ -135,84 +161,145 @@ export default function AdminDashboard() {
       </div>
 
       {preset === 'custom' && (
-        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-3">
           <input
             type="date"
             value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="rounded-lg border border-[#334167] bg-[#0F172A] px-3 py-2 text-sm text-slate-200"
           />
-          <span className="text-xs text-gray-400">a</span>
+          <span className="text-xs text-slate-500">a</span>
           <input
             type="date"
             value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            className="rounded-lg border border-[#334167] bg-[#0F172A] px-3 py-2 text-sm text-slate-200"
           />
         </div>
       )}
 
       {(loading || metricsLoading) ? (
-        <div className="text-gray-400 text-sm">Cargando métricas...</div>
+        <div className="text-slate-400 text-sm">Cargando métricas...</div>
       ) : (
         <>
+          {metricsError && (
+            <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {metricsError}
+            </div>
+          )}
+
           {dashboard && (
             <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
-              <KpiCard
-                label="Revenue total"
+              <TemplateCard
+                title="Ingresos totales"
                 value={fmt(dashboard.business.revenueTotal)}
                 hint="Negocio"
-                deltaPct={calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0)}
+                delta={
+                  calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) !== null
+                    ? `${(calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Ticket promedio"
+              <TemplateCard
+                title="Valor promedio"
                 value={fmt(dashboard.business.averageTicket)}
                 hint="Negocio"
-                deltaPct={calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0)}
+                delta={
+                  calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) !== null
+                    ? `${(calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Margen"
+              <TemplateCard
+                title="Margen"
                 value={`${dashboard.business.marginPct}%`}
                 hint="Negocio"
-                deltaPct={calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0)}
+                delta={
+                  calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) !== null
+                    ? `${(calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Proyectos activos"
+              <TemplateCard
+                title="Proyectos activos"
                 value={String(dashboard.operation.activeProjects)}
                 hint="Operación"
-                deltaPct={calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0)}
+                delta={
+                  calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) !== null
+                    ? `${(calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Tasa finalización"
+              <TemplateCard
+                title="Tasa finalización"
                 value={`${dashboard.operation.completionRatePct}%`}
                 hint="Operación"
-                deltaPct={calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0)}
+                delta={
+                  calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) !== null
+                    ? `${(calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Entrega promedio"
+              <TemplateCard
+                title="Entrega promedio"
                 value={`${dashboard.operation.avgDeliveryDays} días`}
                 hint="Eficiencia"
-                deltaPct={calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays)}
+                delta={
+                  calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) !== null
+                    ? `${(calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Satisfacción"
+              <TemplateCard
+                title="Satisfacción"
                 value={`${dashboard.client.satisfactionAvg}/5`}
                 hint="Cliente"
-                deltaPct={calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0)}
+                delta={
+                  calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) !== null
+                    ? `${(calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
               />
-              <KpiCard
-                label="Recompra"
+              <TemplateCard
+                title="Recompra"
                 value={`${dashboard.client.repurchaseRatePct}%`}
                 hint="Cliente"
-                deltaPct={calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0)}
+                delta={
+                  calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) !== null
+                    ? `${(calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) || 0) * 10) / 10}%`
+                    : undefined
+                }
+              />
+            </div>
+          )}
+
+          {dashboard && (
+            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+              <TemplateCard
+                title="Colaborador más productivo"
+                value={topPerformer ? `${topPerformer.performanceScore}` : '0'}
+                hint={topPerformer ? `${topPerformer.name} · ${topPerformer.completedProjects} completados` : 'Sin datos aun'}
+              />
+              <TemplateCard
+                title="Tiempo promedio por proyecto"
+                value={`${avgProjectDays} días`}
+                hint="Promedio real de proyectos completados"
+              />
+              <TemplateCard
+                title="Promedio de revisiones"
+                value={`${avgRevisions}`}
+                hint="Cambios solicitados por proyecto"
               />
             </div>
           )}
 
           {dashboard && (
             <div className="grid gap-4 mb-8 lg:grid-cols-2">
-              <StatusChart data={dashboard.charts.statusDistribution} />
-              <WeeklyEvolutionChart data={dashboard.charts.weeklyEvolution} />
+              <TemplateOverviewChart
+                data={dashboard.charts.weeklyEvolution}
+                previousData={prevDashboard?.charts.weeklyEvolution || []}
+              />
+              <TemplateRadialBreakdown data={dashboard.charts.statusDistribution} />
             </div>
           )}
 
@@ -224,28 +311,28 @@ export default function AdminDashboard() {
 
           {pending.length > 0 && (
             <div className="mb-8">
-              <h2 className="font-semibold text-cobalt mb-3 flex items-center gap-2">
+              <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
                 <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
                 Por asignar ({pending.length})
               </h2>
               <div className="space-y-3">
                 {pending.map(p => (
-                  <div key={p._id} className="bg-white rounded-xl border border-gray-100 p-5">
+                  <div key={p._id} className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div>
-                        <div className="font-semibold text-cobalt">{p.title}</div>
-                        <div className="text-sm text-gray-400 mt-1">
+                        <div className="font-semibold text-slate-100">{p.title}</div>
+                        <div className="mt-1 text-sm text-slate-400">
                           {typeof p.client === 'object' ? p.client.name : '—'} · {p.serviceType} · Nivel mín. {p.minDesignerLevel}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-cobalt">{fmt(p.pricing.total)}</div>
-                        <div className="text-xs text-gray-400">Pago diseñador: {fmt(p.pricing.designerPay)}</div>
+                        <div className="font-bold text-slate-100">{fmt(p.pricing.total)}</div>
+                        <div className="text-xs text-slate-400">Pago diseñador: {fmt(p.pricing.designerPay)}</div>
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <select
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cobalt/40"
+                        className="flex-1 rounded-lg border border-[#334167] bg-[#0F172A] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-[#4C58FF]"
                         value={selectedDesigner[p._id] || ''}
                         onChange={e => setSelectedDesigner(prev => ({ ...prev, [p._id]: e.target.value }))}
                       >
@@ -261,7 +348,7 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => assign(p._id)}
                         disabled={assigning === p._id}
-                        className="bg-cobalt text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-cobalt-mid transition-colors disabled:opacity-60"
+                        className="rounded-lg bg-[#4C58FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#5A66FF] disabled:opacity-60"
                       >
                         {assigning === p._id ? 'Asignando...' : 'Asignar'}
                       </button>
@@ -274,21 +361,21 @@ export default function AdminDashboard() {
 
           {active.length > 0 && (
             <div>
-              <h2 className="font-semibold text-cobalt mb-3 flex items-center gap-2">
+              <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
                 <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                 En producción ({active.length})
               </h2>
               <div className="space-y-2">
                 {active.map(p => (
                   <a key={p._id} href={`/admin/proyectos/${p._id}`}
-                    className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-4 hover:border-cobalt/20 transition-colors">
+                    className="flex items-center justify-between rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4 transition-colors hover:border-[#4C58FF]/40">
                     <div>
-                      <div className="font-medium text-cobalt text-sm">{p.title}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">
+                      <div className="text-sm font-medium text-slate-100">{p.title}</div>
+                      <div className="mt-0.5 text-xs text-slate-400">
                         {typeof p.designer === 'object' && p.designer ? p.designer.name : 'Sin asignar'} · Rev. {p.revisions.used}/{p.revisions.max}
                       </div>
                     </div>
-                    <span className="text-xs font-medium text-cobalt/60 capitalize">{p.status}</span>
+                    <span className="text-xs font-medium text-slate-300 capitalize">{p.status}</span>
                   </a>
                 ))}
               </div>
@@ -296,7 +383,7 @@ export default function AdminDashboard() {
           )}
 
           {prevDashboard && (
-            <p className="mt-8 text-xs text-gray-500">
+            <p className="mt-8 text-xs text-slate-500">
               Comparativos calculados contra un periodo anterior equivalente.
             </p>
           )}
