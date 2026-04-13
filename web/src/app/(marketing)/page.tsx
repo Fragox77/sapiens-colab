@@ -71,7 +71,7 @@ export default function MarketingHomePage() {
               className="mt-10 flex flex-col gap-4 sm:flex-row"
             >
               <Link
-                href="/postulacion"
+                href="/cotizar"
                 className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-100"
               >
                 Cotizar proyecto
