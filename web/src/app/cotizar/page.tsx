@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { quotesApi } from '@/lib/api'
 import type { Complexity, QuoteResult, ServiceType, Urgency } from '@/types'
+import { PublicNavbar } from '@/components/public/PublicNavbar'
 
 const services: Array<{ value: ServiceType; label: string }> = [
   { value: 'branding', label: 'Identidad de marca' },
@@ -66,7 +67,9 @@ export default function CotizarPage() {
 
   return (
     <main className="min-h-screen bg-[#0F172A] text-slate-100">
-      <section className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 sm:px-10 lg:grid-cols-[1fr_1fr] lg:px-16 lg:py-24">
+      <PublicNavbar />
+
+      <section className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-14 sm:px-10 lg:grid-cols-[1fr_1fr] lg:px-16 lg:py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

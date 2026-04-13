@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { PublicNavbar } from '@/components/public/PublicNavbar'
 
 type ProjectCase = {
   name: string
@@ -65,7 +66,9 @@ const reveal = {
 export default function ProyectosPage() {
   return (
     <main className="min-h-screen bg-[#0F172A] text-slate-100">
-      <section className="relative mx-auto w-full max-w-7xl px-6 pb-10 pt-24 sm:px-10 lg:px-16 lg:pb-12 lg:pt-28">
+      <PublicNavbar />
+
+      <section className="relative mx-auto w-full max-w-7xl px-6 pb-10 pt-14 sm:px-10 lg:px-16 lg:pb-12 lg:pt-16">
         <motion.p
           initial="hidden"
           animate="show"
@@ -81,7 +84,7 @@ export default function ProyectosPage() {
           animate="show"
           custom={0.12}
           variants={reveal}
-          className="mt-6 max-w-5xl text-5xl font-semibold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[5rem]"
+          className="mt-6 max-w-5xl text-4xl font-semibold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[5rem]"
         >
           Casos reales donde la ejecucion se convirtio en sistema.
         </motion.h1>

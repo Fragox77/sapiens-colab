@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { HowWeWorkSection } from '@/components/public/HowWeWorkSection'
 import { DifferentiatorSection } from '@/components/public/DifferentiatorSection'
 import { ResultsSection } from '@/components/public/ResultsSection'
+import { PublicNavbar } from '@/components/public/PublicNavbar'
 
 const reveal = {
   hidden: { opacity: 0, y: 24 },
@@ -32,6 +33,8 @@ const heroStagger = {
 export default function MarketingHomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0F172A] text-slate-100">
+      <PublicNavbar />
+
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute right-0 top-1/4 h-80 w-80 rounded-full bg-indigo-300/10 blur-3xl" />
@@ -39,7 +42,7 @@ export default function MarketingHomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_45%)]" />
       </div>
 
-      <section className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
+      <section className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-20 sm:px-10 lg:px-16 lg:py-28">
         <motion.div
           initial="hidden"
           animate="show"
@@ -58,7 +61,7 @@ export default function MarketingHomePage() {
             <motion.h1
               custom={0}
               variants={reveal}
-              className="max-w-4xl text-5xl font-semibold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[5.2rem]"
+              className="max-w-4xl text-4xl font-semibold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[5.2rem]"
             >
               Construimos estructura digital que convierte ideas en crecimiento real.
             </motion.h1>
