@@ -1,0 +1,9 @@
+{
+  "name": "@sapiens/shared",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@sapiens/config": "*"
+  },
+  "main": "src/index.ts"
+}

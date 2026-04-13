@@ -4,13 +4,19 @@
   "private": true,
   "workspaces": [
     "web",
-    "api"
+    "api",
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
     "dev:web": "npm run dev --workspace=web",
     "dev:api": "npm run dev --workspace=api",
+    "dev:backend:new": "npm run dev --workspace=@sapiens/backend",
+    "dev:worker": "npm run dev --workspace=@sapiens/worker",
     "build": "npm run build --workspace=web",
+    "build:backend:new": "npm run build --workspace=@sapiens/backend",
+    "build:worker": "npm run build --workspace=@sapiens/worker",
     "install:all": "npm install && npm install --workspace=web && npm install --workspace=api"
   },
   "devDependencies": {

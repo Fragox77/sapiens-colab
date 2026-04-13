@@ -80,3 +80,34 @@ npm run dev:web   # → http://localhost:3000
 - **Base de datos**: MongoDB Atlas (misma conexión de Fenalco o nueva DB `sapiens-colab`)
 - **Archivos**: Cloudinary (mismas credenciales de Fenalco)
 - **Dominio**: sapienscolab.com → Vercel
+
+## Base tecnica inicial OpenClaw (multi-tenant)
+
+Se agrego una base paralela para evolucionar a SaaS modular con PostgreSQL + Redis:
+
+```
+apps/
+	backend/
+	worker/
+	web/
+packages/
+	types/
+	shared/
+	config/
+modules/
+	tenant auth user agent conversation message workflow ticket knowledge audit
+database/
+	schema.sql
+docs/
+	architecture.md database.md modules.md
+```
+
+### Arranque rapido de la nueva base
+
+```bash
+cp .env.example .env
+docker compose up -d
+npm install
+npm run dev:backend:new
+npm run dev:worker
+```
