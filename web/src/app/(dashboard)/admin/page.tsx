@@ -6,7 +6,7 @@ import { KpiCard } from '@/components/dashboard/KpiCard'
 import { StatusChart } from '@/components/dashboard/StatusChart'
 import { WeeklyEvolutionChart } from '@/components/dashboard/WeeklyEvolutionChart'
 import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
-import type { DashboardMetrics, FinanceMetrics, PerformanceMetrics, Project, User } from '@/types'
+import type { DashboardMetrics, Project, User } from '@/types'
 
 type Preset = '7d' | '30d' | '90d' | 'custom'
 type Range = { from: Date; to: Date }
@@ -41,12 +41,8 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [designers, setDesigners] = useState<User[]>([])
   const [dashboard, setDashboard] = useState<DashboardMetrics | null>(null)
-  const [performance, setPerformance] = useState<PerformanceMetrics | null>(null)
-  const [finance, setFinance] = useState<FinanceMetrics | null>(null)
 
   const [prevDashboard, setPrevDashboard] = useState<DashboardMetrics | null>(null)
-  const [prevPerformance, setPrevPerformance] = useState<PerformanceMetrics | null>(null)
-  const [prevFinance, setPrevFinance] = useState<FinanceMetrics | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [metricsLoading, setMetricsLoading] = useState(true)
@@ -71,21 +67,13 @@ export default function AdminDashboard() {
     const prevRange = previousRange(range)
 
     try {
-      const [m, perf, fin, mPrev, perfPrev, finPrev] = await Promise.all([
+      const [m, mPrev] = await Promise.all([
         metricsApi.dashboard({ from: range.from.toISOString(), to: range.to.toISOString() }),
-        metricsApi.performance({ from: range.from.toISOString(), to: range.to.toISOString() }),
-        metricsApi.finance({ from: range.from.toISOString(), to: range.to.toISOString() }),
         metricsApi.dashboard({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
-        metricsApi.performance({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
-        metricsApi.finance({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
       ])
 
       setDashboard(m)
-      setPerformance(perf)
-      setFinance(fin)
       setPrevDashboard(mPrev)
-      setPrevPerformance(perfPrev)
-      setPrevFinance(finPrev)
     } finally {
       setMetricsLoading(false)
     }
@@ -168,19 +156,19 @@ export default function AdminDashboard() {
         <div className="text-gray-400 text-sm">Cargando métricas...</div>
       ) : (
         <>
-          {dashboard && finance && (
+          {dashboard && (
             <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
               <KpiCard
                 label="Revenue total"
-                value={fmt(finance.business.revenueTotal)}
+                value={fmt(dashboard.business.revenueTotal)}
                 hint="Negocio"
-                deltaPct={calcDelta(finance.business.revenueTotal, prevFinance?.business.revenueTotal || 0)}
+                deltaPct={calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0)}
               />
               <KpiCard
                 label="Ticket promedio"
-                value={fmt(finance.business.averageTicket)}
+                value={fmt(dashboard.business.averageTicket)}
                 hint="Negocio"
-                deltaPct={calcDelta(finance.business.averageTicket, prevFinance?.business.averageTicket || 0)}
+                deltaPct={calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0)}
               />
               <KpiCard
                 label="Margen"
@@ -228,9 +216,9 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {performance && (
+          {dashboard && (
             <div className="mb-8">
-              <CollaboratorRanking data={performance.talent.ranking.slice(0, 6)} />
+              <CollaboratorRanking data={dashboard.talent.topPerformers.slice(0, 6)} />
             </div>
           )}
 
@@ -307,7 +295,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {prevPerformance && (
+          {prevDashboard && (
             <p className="mt-8 text-xs text-gray-500">
               Comparativos calculados contra un periodo anterior equivalente.
             </p>
