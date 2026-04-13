@@ -55,14 +55,14 @@ export default function PerfilPage() {
 
       {/* Badge nivel */}
       {stored?.level && (
-        <div className="bg-cobalt rounded-xl p-5 mb-6 flex items-center justify-between">
+        <div className="theme-dashboard-panel theme-dashboard-border rounded-xl border p-5 mb-6 flex items-center justify-between">
           <div>
-            <div className="text-white/40 text-xs uppercase tracking-wider">Tu nivel SAPIENS</div>
-            <div className="text-3xl font-black text-white mt-1">{stored.level} <span className="text-base font-normal text-white/50">/ 10</span></div>
+            <div className="theme-dashboard-muted text-xs uppercase tracking-wider">Tu nivel SAPIENS</div>
+            <div className="theme-dashboard-text text-3xl font-black mt-1">{stored.level} <span className="text-base font-normal theme-dashboard-muted">/ 10</span></div>
           </div>
           <div className="text-right">
-            <div className="text-white/40 text-xs uppercase tracking-wider mb-1">Especialidad</div>
-            <div className="text-white text-sm font-medium">{stored.specialty || '—'}</div>
+            <div className="theme-dashboard-muted text-xs uppercase tracking-wider mb-1">Especialidad</div>
+            <div className="theme-dashboard-text text-sm font-medium">{stored.specialty || '—'}</div>
           </div>
         </div>
       )}
@@ -145,7 +145,7 @@ export default function PerfilPage() {
 
         <button
           type="submit" disabled={saving}
-          className="w-full bg-cobalt text-white font-semibold py-3 rounded-xl hover:bg-cobalt-mid transition-colors disabled:opacity-60"
+          className="theme-dashboard-button w-full font-semibold py-3 rounded-xl hover:bg-cobalt-mid transition-colors disabled:opacity-60"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>

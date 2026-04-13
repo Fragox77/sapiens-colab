@@ -37,8 +37,20 @@ app.locals.notifyUser = (userId, payload) => {
 
 // ─── Middleware ───────────────────────────────────────────────
 app.use(helmet());
+const defaultOrigins = ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:3003'];
+const envOrigins = String(process.env.WEB_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set([...defaultOrigins, ...envOrigins]);
+
 app.use(cors({
-  origin: process.env.WEB_URL || 'http://localhost:3000',
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origen no permitido por CORS: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

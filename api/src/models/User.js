@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
   phone:       { type: String, default: null },
 
   avatar:      { type: String, default: null },
+
+  // Multi-tenant: cada usuario pertenece a una agencia/instancia
+  // Para el admin fundador: tenantId = su propio _id (auto-asignado en registro)
+  // Para colaboradores creados por admin: tenantId heredado del admin
+  tenantId:    { type: String, default: null, index: true },
 }, { timestamps: true });
 
 // Hash password antes de guardar

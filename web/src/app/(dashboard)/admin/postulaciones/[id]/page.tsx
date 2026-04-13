@@ -141,7 +141,7 @@ export default function PostulacionDetailPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-64">
-      <div className="text-slate-400 text-sm">Cargando postulación...</div>
+      <div className="theme-dashboard-muted text-sm">Cargando postulación...</div>
     </div>
   )
 
@@ -159,7 +159,7 @@ export default function PostulacionDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-sm text-slate-400 transition-colors hover:text-[#A5B4FC]">
+            <button onClick={() => router.back()} className="theme-dashboard-muted text-sm transition-colors hover:text-[#A5B4FC]">
             ← Postulaciones
           </button>
         </div>
@@ -169,13 +169,13 @@ export default function PostulacionDetailPage() {
         {/* Columna izquierda: info del postulante */}
         <div className="lg:col-span-1 space-y-4">
           {/* Tarjeta principal */}
-          <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-5">
+          <div className="theme-dashboard-border theme-dashboard-surface rounded-2xl border p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#4C58FF]/20 text-lg font-black text-[#A5B4FC]">
                 {app.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="font-bold text-slate-100">{app.name}</div>
+                <div className="theme-dashboard-text font-bold">{app.name}</div>
                 <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusMeta.color}`}>
                   {statusMeta.label}
                 </span>
@@ -184,28 +184,28 @@ export default function PostulacionDetailPage() {
 
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-400">Email</span>
-                <span className="ml-2 truncate font-medium text-slate-200">{app.email}</span>
+                <span className="theme-dashboard-muted">Email</span>
+                <span className="theme-dashboard-text ml-2 truncate font-medium">{app.email}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Teléfono</span>
-                <span className="font-medium text-slate-200">{app.phone}</span>
+                <span className="theme-dashboard-muted">Teléfono</span>
+                <span className="theme-dashboard-text font-medium">{app.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Ciudad</span>
-                <span className="font-medium text-slate-200">{app.city}</span>
+                <span className="theme-dashboard-muted">Ciudad</span>
+                <span className="theme-dashboard-text font-medium">{app.city}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Rol</span>
-                <span className="font-medium capitalize text-slate-200">{app.role}</span>
+                <span className="theme-dashboard-muted">Rol</span>
+                <span className="theme-dashboard-text font-medium capitalize">{app.role}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Experiencia</span>
-                <span className="font-medium text-slate-200">{app.experience} años</span>
+                <span className="theme-dashboard-muted">Experiencia</span>
+                <span className="theme-dashboard-text font-medium">{app.experience} años</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Disponibilidad</span>
-                <span className="font-medium capitalize text-slate-200">{app.availability}</span>
+                <span className="theme-dashboard-muted">Disponibilidad</span>
+                <span className="theme-dashboard-text font-medium capitalize">{app.availability}</span>
               </div>
               {app.portfolio && (
                 <div className="pt-1">
@@ -221,21 +221,21 @@ export default function PostulacionDetailPage() {
               )}
             </div>
 
-            <div className="mt-4 border-t border-[#2F3A5C] pt-4">
-              <div className="mb-1.5 text-xs text-slate-400">Motivación</div>
-              <p className="text-xs leading-relaxed text-slate-300">{app.motivation}</p>
+            <div className="theme-dashboard-border mt-4 border-t pt-4">
+              <div className="theme-dashboard-muted mb-1.5 text-xs">Motivación</div>
+              <p className="theme-dashboard-muted text-xs leading-relaxed">{app.motivation}</p>
             </div>
           </div>
 
           {/* Nivel actual */}
           {app.level ? (
-            <div className="bg-cobalt rounded-2xl p-5">
-              <div className="text-white/40 text-xs mb-1">Nivel asignado</div>
-              <div className="text-5xl font-black text-white leading-none mb-1">{app.level}</div>
-              <div className="text-white/60 text-xs">/ 10</div>
-              <div className="mt-3 pt-3 border-t border-white/10">
-                <div className="text-white/40 text-xs mb-0.5">Rango de pago</div>
-                <div className="text-white font-semibold text-sm">{app.payRange}</div>
+            <div className="theme-dashboard-panel theme-dashboard-border rounded-2xl border p-5">
+              <div className="theme-dashboard-muted text-xs mb-1">Nivel asignado</div>
+              <div className="theme-dashboard-text text-5xl font-black leading-none mb-1">{app.level}</div>
+              <div className="theme-dashboard-muted text-xs">/ 10</div>
+              <div className="theme-dashboard-border mt-3 pt-3 border-t">
+                <div className="theme-dashboard-muted text-xs mb-0.5">Rango de pago</div>
+                <div className="theme-dashboard-text font-semibold text-sm">{app.payRange}</div>
               </div>
             </div>
           ) : null}
@@ -264,15 +264,15 @@ export default function PostulacionDetailPage() {
         {/* Columna derecha: evaluación y acciones */}
         <div className="lg:col-span-2 space-y-5">
           {/* Panel de evaluación */}
-          <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
-            <h2 className="mb-4 font-bold text-slate-100">Evaluación por pilares</h2>
+          <div className="theme-dashboard-border theme-dashboard-surface rounded-2xl border p-6">
+            <h2 className="theme-dashboard-text mb-4 font-bold">Evaluación por pilares</h2>
 
             <div className="space-y-5 mb-5">
               {SCORE_FIELDS.map(f => (
                 <div key={f.key}>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-slate-400">{f.label} <span className="text-slate-500">({f.weight})</span></span>
-                    <span className="font-bold text-slate-100">{scores[f.key] ?? 0}</span>
+                    <span className="theme-dashboard-muted">{f.label} <span className="text-slate-500">({f.weight})</span></span>
+                    <span className="theme-dashboard-text font-bold">{scores[f.key] ?? 0}</span>
                   </div>
                   <input
                     type="range" min={0} max={10} step={1}
@@ -281,7 +281,7 @@ export default function PostulacionDetailPage() {
                     onChange={e => setScores(s => ({ ...s, [f.key]: Number(e.target.value) }))}
                     className="w-full accent-coral disabled:opacity-50"
                   />
-                  <div className="mt-0.5 flex justify-between text-xs text-slate-500">
+                  <div className="theme-dashboard-muted mt-0.5 flex justify-between text-xs">
                     <span>0</span><span>5</span><span>10</span>
                   </div>
                 </div>
@@ -289,14 +289,14 @@ export default function PostulacionDetailPage() {
             </div>
 
             {/* Preview nivel */}
-            <div className="mb-4 flex items-center justify-between rounded-xl border border-[#2F3A5C] bg-[#0F172A] p-4">
+            <div className="theme-dashboard-border theme-dashboard-surface-2 mb-4 flex items-center justify-between rounded-xl border p-4">
               <div>
-                <div className="text-xs text-slate-500">Nivel calculado</div>
-                <div className="text-3xl font-black text-slate-100">{previewLevel} <span className="text-sm font-normal text-slate-500">/ 10</span></div>
+                <div className="theme-dashboard-muted text-xs">Nivel calculado</div>
+                <div className="theme-dashboard-text text-3xl font-black">{previewLevel} <span className="text-sm font-normal theme-dashboard-muted">/ 10</span></div>
               </div>
               <div className="text-right">
-                <div className="mb-0.5 text-xs text-slate-500">Rango de pago</div>
-                <div className="text-sm font-semibold text-slate-200">{PAY_RANGES[previewLevel]}</div>
+                <div className="theme-dashboard-muted mb-0.5 text-xs">Rango de pago</div>
+                <div className="theme-dashboard-text text-sm font-semibold">{PAY_RANGES[previewLevel]}</div>
               </div>
             </div>
 
@@ -307,17 +307,17 @@ export default function PostulacionDetailPage() {
               disabled={isClosed}
               onChange={e => setNotes(e.target.value)}
               placeholder="Notas internas sobre el postulante..."
-              className="mb-4 w-full resize-none rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF] disabled:bg-[#0F172A] disabled:text-slate-500"
+              className="theme-dashboard-input mb-4 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF] disabled:opacity-60"
             />
 
             {/* Estado */}
             <div className="mb-4">
-              <label className="mb-1.5 block text-xs uppercase tracking-wide text-slate-400">Estado</label>
+              <label className="theme-dashboard-muted mb-1.5 block text-xs uppercase tracking-wide">Estado</label>
               <select
                 value={evalStatus}
                 disabled={isClosed}
                 onChange={e => setEvalStatus(e.target.value)}
-                className="w-full rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-[#4C58FF] disabled:bg-[#0F172A] disabled:text-slate-500"
+                className="theme-dashboard-input w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#4C58FF] disabled:opacity-60"
               >
                 <option value="recibida">Recibida</option>
                 <option value="en-evaluacion">En evaluación</option>
@@ -345,9 +345,9 @@ export default function PostulacionDetailPage() {
 
           {/* Asignar brief */}
           {!isClosed && (
-            <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
+            <div className="theme-dashboard-border theme-dashboard-surface rounded-2xl border p-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-slate-100">Brief de prueba técnica</h2>
+                <h2 className="theme-dashboard-text font-bold">Brief de prueba técnica</h2>
                 {!showBriefForm && (
                   <button
                     onClick={() => { setShowBriefForm(true); setBriefText(app.briefAssigned ?? '') }}
@@ -359,7 +359,7 @@ export default function PostulacionDetailPage() {
               </div>
 
               {!showBriefForm && !app.briefAssigned && (
-                <p className="text-xs text-slate-400">
+                <p className="theme-dashboard-muted text-xs">
                   Asigna un brief de prueba técnica para evaluar las capacidades del postulante.
                   Esto cambiará el estado a &quot;Prueba enviada&quot;.
                 </p>
@@ -372,7 +372,7 @@ export default function PostulacionDetailPage() {
                     value={briefText}
                     onChange={e => setBriefText(e.target.value)}
                     placeholder="Describe el brief de prueba técnica que debe resolver el postulante..."
-                    className="mb-3 w-full resize-none rounded-xl border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF]"
+                    className="theme-dashboard-input mb-3 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF]"
                     autoFocus
                   />
                   {briefError && (
@@ -381,7 +381,7 @@ export default function PostulacionDetailPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowBriefForm(false)}
-                      className="flex-1 rounded-xl border border-[#334167] py-2 text-sm text-slate-300 transition-colors hover:bg-[#1B2642]"
+                      className="theme-dashboard-border theme-dashboard-muted flex-1 rounded-xl border py-2 text-sm transition-colors hover:bg-[var(--dashboard-surface-2)]"
                     >
                       Cancelar
                     </button>
@@ -400,9 +400,9 @@ export default function PostulacionDetailPage() {
 
           {/* Acciones finales: Activar / Rechazar */}
           {!isClosed && app.level && (
-            <div className="rounded-2xl border border-[#2F3A5C] bg-[#121A2F] p-6">
-              <h2 className="mb-1 font-bold text-slate-100">Decisión final</h2>
-              <p className="mb-4 text-xs text-slate-400">
+            <div className="theme-dashboard-border theme-dashboard-surface rounded-2xl border p-6">
+              <h2 className="theme-dashboard-text mb-1 font-bold">Decisión final</h2>
+              <p className="theme-dashboard-muted mb-4 text-xs">
                 El postulante tiene nivel {app.level}. Activa su cuenta o rechaza la postulación.
               </p>
 

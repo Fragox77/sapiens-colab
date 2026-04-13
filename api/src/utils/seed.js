@@ -27,11 +27,16 @@ async function seed() {
   console.log('🗑  Colecciones limpiadas')
 
   // ─── Usuarios — se crean individualmente para que el hook pre('save') haga el hash ──
+  // tenantId del admin = su propio _id (es el dueño de la instancia)
+  // diseñadores y clientes heredan el tenantId del admin
   const admin = await User.create({ name: 'Jhon Admin',         email: 'admin@sapienscolab.com', password: 'Admin123!',   role: 'admin' })
-  const d1    = await User.create({ name: 'Laura Diseñadora',   email: 'laura@sapienscolab.com', password: 'Laura123!',   role: 'disenador', level: 8, specialty: 'Branding',       portfolio: 'https://behance.net/laura',   isAvailable: true })
-  const d2    = await User.create({ name: 'Carlos Motion',      email: 'carlos@sapienscolab.com',password: 'Carlos123!',  role: 'disenador', level: 6, specialty: 'Video & Motion', portfolio: 'https://behance.net/carlos', isAvailable: true })
-  const c1    = await User.create({ name: 'Empresa TechCo',     email: 'techco@empresa.com',     password: 'Cliente123!', role: 'cliente',   company: 'TechCo S.A.S',          phone: '+57 310 123 4567' })
-  const c2    = await User.create({ name: 'Restaurante Sabor',  email: 'sabor@restaurante.com',  password: 'Cliente123!', role: 'cliente',   company: 'Restaurante El Sabor',  phone: '+57 315 987 6543' })
+  await User.findByIdAndUpdate(admin._id, { tenantId: admin._id.toString() })
+  admin.tenantId = admin._id.toString()
+
+  const d1    = await User.create({ name: 'Laura Diseñadora',   email: 'laura@sapienscolab.com', password: 'Laura123!',   role: 'disenador', level: 8, specialty: 'Branding',       portfolio: 'https://behance.net/laura',   isAvailable: true, tenantId: admin._id.toString() })
+  const d2    = await User.create({ name: 'Carlos Motion',      email: 'carlos@sapienscolab.com',password: 'Carlos123!',  role: 'disenador', level: 6, specialty: 'Video & Motion', portfolio: 'https://behance.net/carlos', isAvailable: true, tenantId: admin._id.toString() })
+  const c1    = await User.create({ name: 'Empresa TechCo',     email: 'techco@empresa.com',     password: 'Cliente123!', role: 'cliente',   company: 'TechCo S.A.S',          phone: '+57 310 123 4567', tenantId: admin._id.toString() })
+  const c2    = await User.create({ name: 'Restaurante Sabor',  email: 'sabor@restaurante.com',  password: 'Cliente123!', role: 'cliente',   company: 'Restaurante El Sabor',  phone: '+57 315 987 6543', tenantId: admin._id.toString() })
 
   console.log('👥 Usuarios creados')
 

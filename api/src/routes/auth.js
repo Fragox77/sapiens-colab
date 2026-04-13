@@ -7,7 +7,7 @@ const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
 
 const signToken = (user) =>
   jwt.sign(
-    { id: user._id, role: user.role, name: user.name },
+    { id: user._id, role: user.role, name: user.name, tenantId: user.tenantId || null },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -23,6 +23,9 @@ router.post('/registro', async (req, res) => {
       return res.status(409).json({ error: 'Ya existe una cuenta con ese email' });
 
     const user = await User.create({ name, email, password, company, phone, role: 'cliente' });
+    // El cliente que se registra es su propio tenant (instancia independiente)
+    user.tenantId = user._id.toString();
+    await user.save();
     res.status(201).json({ token: signToken(user), user: user.toSafeJSON() });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -103,70 +103,6 @@ router.get('/designers', async (_req, res) => {
   }
 });
 
-// ─── DASHBOARD ────────────────────────────────────────────────
-
-// GET /api/admin/dashboard
-router.get('/dashboard', async (_req, res) => {
-  try {
-    const [stats] = await Project.aggregate([
-      {
-        $facet: {
-          counts: [
-            {
-              $group: {
-                _id: null,
-                total: { $sum: 1 },
-                activos: { $sum: { $cond: [{ $eq: ['$status', 'activo'] }, 1, 0] } },
-                completados: { $sum: { $cond: [{ $eq: ['$status', 'completado'] }, 1, 0] } },
-                cotizados: { $sum: { $cond: [{ $eq: ['$status', 'cotizado'] }, 1, 0] } },
-              },
-            },
-          ],
-          finanzas: [
-            { $match: { status: 'completado' } },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: '$pricing.total' },
-                utilidad: {
-                  $sum: {
-                    $subtract: [
-                      '$pricing.total',
-                      { $add: ['$pricing.designerPay', { $multiply: ['$pricing.total', 0.19] }] },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    const counts = (stats && stats.counts && stats.counts[0]) || {
-      total: 0,
-      activos: 0,
-      completados: 0,
-      cotizados: 0,
-    };
-
-    const rawIngresos = (stats && stats.finanzas && stats.finanzas[0]) || { total: 0, utilidad: 0 };
-    const ingresos = { total: rawIngresos.total || 0, utilidad: rawIngresos.utilidad || 0 };
-
-    res.json({
-      projects: {
-        total: counts.total,
-        activos: counts.activos,
-        completados: counts.completados,
-        cotizados: counts.cotizados,
-      },
-      finanzas: ingresos,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ─── FINANCIERO ───────────────────────────────────────────────
 
 // PATCH /api/admin/projects/:id/anticipo — Registrar pago de anticipo
@@ -508,6 +444,7 @@ router.patch('/applications/:id/activate', async (req, res) => {
       phone:       app.phone,
       isActive:    true,
       isAvailable: true,
+      tenantId:    req.user.tenantId || null,   // hereda el tenant del admin
     });
 
     app.userId = user._id;

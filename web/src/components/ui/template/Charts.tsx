@@ -182,20 +182,20 @@ export function TemplateOverviewChart({
   }
 
   return (
-    <section className="rounded-xl border border-[#2F3A5C] bg-[linear-gradient(180deg,#151D34_0%,#10182A_100%)] p-5">
+    <section className="theme-dashboard-card rounded-xl border p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-white">Resumen</h3>
-          <div className="text-[11px] text-slate-400">Ingresos vs costos</div>
+          <h3 className="theme-dashboard-text text-sm font-bold">Resumen</h3>
+          <div className="theme-dashboard-muted text-[11px]">Ingresos vs costos</div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={toggleComparar}
-            className={`rounded-md border px-2 py-1 text-[10px] transition-colors ${comparar ? 'border-cyan-400/40 bg-cyan-400/10 text-cyan-200' : 'border-[#334167] bg-[#0F172A] text-slate-400'}`}
+            className={`rounded-md border px-2 py-1 text-[10px] transition-colors ${comparar ? 'border-cyan-400/40 bg-cyan-400/10 text-cyan-200' : 'theme-dashboard-border theme-dashboard-surface text-[color:var(--dashboard-muted)]'}`}
           >
             Comparar
           </button>
-          <div className="inline-flex rounded-md border border-[#334167] bg-[#0F172A] p-0.5 text-[10px]">
+          <div className="theme-dashboard-border theme-dashboard-surface inline-flex rounded-md border p-0.5 text-[10px]">
             <button onClick={() => setVista('completo')} className={`rounded px-2 py-1 ${vista === 'completo' ? 'bg-[#4C58FF] text-white' : 'text-slate-400'}`}>Todo</button>
               <span className="group relative inline-flex">
                 <button
@@ -206,7 +206,7 @@ export function TemplateOverviewChart({
                   8
                 </button>
                 {comparar && (
-                  <span className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-[#334167] bg-[#0B1223] px-2 py-1 text-[10px] text-slate-200 shadow-lg group-hover:block">
+                  <span className="theme-dashboard-border theme-dashboard-surface pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[10px] theme-dashboard-text shadow-lg group-hover:block">
                     Desactivado durante comparación
                   </span>
                 )}
@@ -220,7 +220,7 @@ export function TemplateOverviewChart({
                   4
                 </button>
                 {comparar && (
-                  <span className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-[#334167] bg-[#0B1223] px-2 py-1 text-[10px] text-slate-200 shadow-lg group-hover:block">
+                  <span className="theme-dashboard-border theme-dashboard-surface pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[10px] theme-dashboard-text shadow-lg group-hover:block">
                     Desactivado durante comparación
                   </span>
                 )}
@@ -230,14 +230,14 @@ export function TemplateOverviewChart({
       </div>
 
       {visibleData.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[#344067] bg-[#0F172A] p-4 text-xs text-slate-400">
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-lg border border-dashed p-4 text-xs theme-dashboard-muted">
           Sin actividad semanal para este periodo.
         </div>
       ) : (
         <>
           <div
             ref={chartRef}
-            className="relative h-64 overflow-hidden rounded-lg border border-[#2D3656] bg-[#10182A] p-4"
+            className="theme-dashboard-border theme-dashboard-surface-2 relative h-64 overflow-hidden rounded-lg border p-4"
             onMouseMove={onChartMove}
             onMouseLeave={() => setActiveIndex(null)}
           >
@@ -266,7 +266,7 @@ export function TemplateOverviewChart({
                         />
                       )}
                     </div>
-                    <p className="mt-2 text-center text-[10px] text-slate-500">{point.label}</p>
+                    <p className="theme-dashboard-muted mt-2 text-center text-[10px]">{point.label}</p>
                   </div>
                 )
               })}
@@ -350,10 +350,10 @@ export function TemplateOverviewChart({
 
             {hoveredPoint && (
               <div
-                className="pointer-events-none absolute top-3 z-20 rounded-lg border border-[#334167] bg-[#0B1223]/95 px-3 py-2 text-[11px] text-slate-200 shadow-lg"
+                className="theme-dashboard-border theme-dashboard-surface pointer-events-none absolute top-3 z-20 rounded-lg border px-3 py-2 text-[11px] theme-dashboard-text shadow-lg"
                 style={{ left: `clamp(8px, calc(${cursorX}px - 72px), calc(100% - 170px))` }}
               >
-                <p className="font-semibold text-slate-100">{hoveredPoint.label}</p>
+                <p className="font-semibold">{hoveredPoint.label}</p>
                 <p>Ingresos: ${Math.round(hoveredPoint.revenue).toLocaleString('es-CO')}</p>
                 <p>Costos: ${Math.round(hoveredPoint.cost).toLocaleString('es-CO')}</p>
                 <p>Completados: {hoveredPoint.completedProjects}</p>
@@ -377,22 +377,22 @@ export function TemplateOverviewChart({
             )}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-300">
+          <div className="theme-dashboard-muted mt-3 flex flex-wrap gap-2 text-[11px]">
             <button
               onClick={() => toggleSeries('barrasIngresos')}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.barrasIngresos ? 'border-[#4F5DFF]/50 bg-[#4F5DFF]/15 text-slate-100' : 'border-[#334167] text-slate-500'}`}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.barrasIngresos ? 'border-[#4F5DFF]/50 bg-[#4F5DFF]/15 theme-dashboard-text' : 'theme-dashboard-border theme-dashboard-muted'}`}
             >
               <span className="inline-block h-2.5 w-2.5 rounded bg-[#4F5DFF]" /> Ingresos
             </button>
             <button
               onClick={() => toggleSeries('lineaIngresos')}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.lineaIngresos ? 'border-[#22D3EE]/50 bg-[#22D3EE]/10 text-slate-100' : 'border-[#334167] text-slate-500'}`}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.lineaIngresos ? 'border-[#22D3EE]/50 bg-[#22D3EE]/10 theme-dashboard-text' : 'theme-dashboard-border theme-dashboard-muted'}`}
             >
               <span className="inline-block h-2.5 w-2.5 rounded bg-[#22D3EE]" /> Línea de ingresos
             </button>
             <button
               onClick={() => toggleSeries('lineaCostos')}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.lineaCostos ? 'border-[#F472B6]/50 bg-[#F472B6]/10 text-slate-100' : 'border-[#334167] text-slate-500'}`}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${showSeries.lineaCostos ? 'border-[#F472B6]/50 bg-[#F472B6]/10 theme-dashboard-text' : 'theme-dashboard-border theme-dashboard-muted'}`}
             >
               <span className="inline-block h-2.5 w-2.5 rounded bg-[#F472B6]" /> Línea de costos
             </button>
@@ -413,11 +413,11 @@ export function TemplateRadialBreakdown({ data }: { data: StatusMetricPoint[] })
   const palette = ['#4F5DFF', '#66D36E', '#7C4DFF', '#FF7849', '#22D3EE']
 
   return (
-    <section className="rounded-xl border border-[#2F3A5C] bg-[linear-gradient(180deg,#151D34_0%,#10182A_100%)] p-5">
-      <h3 className="text-sm font-semibold text-white">Distribución operativa</h3>
+    <section className="theme-dashboard-card rounded-xl border p-5">
+      <h3 className="theme-dashboard-text text-sm font-bold">Distribución operativa</h3>
 
       {data.length === 0 || total === 0 ? (
-        <div className="mt-5 rounded-lg border border-dashed border-[#344067] bg-[#0F172A] p-4 text-xs text-slate-400">
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-lg border border-dashed p-4 text-xs theme-dashboard-muted">
           Aún no hay datos para visualizar.
         </div>
       ) : (
@@ -450,7 +450,7 @@ export function TemplateRadialBreakdown({ data }: { data: StatusMetricPoint[] })
 
           <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
             {data.slice(0, 6).map((item, idx) => (
-              <div key={item.status} className="flex items-center justify-between rounded-md bg-[#0F172A] px-2 py-1.5 text-slate-300">
+              <div key={item.status} className="theme-dashboard-surface flex items-center justify-between rounded-md px-2 py-1.5 theme-dashboard-muted">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: palette[idx % palette.length] }} />
                   {STATUS_LABEL[item.status] || item.status}
@@ -469,10 +469,10 @@ export function TemplateStatusChart({ data }: { data: StatusMetricPoint[] }) {
   const total = data.reduce((sum, row) => sum + row.count, 0) || 1
 
   return (
-    <section className="rounded-xl border border-[#2F3A5C] bg-[linear-gradient(180deg,#151D34_0%,#10182A_100%)] p-5">
-      <h3 className="text-sm font-semibold text-white">Proyectos por estado</h3>
+    <section className="theme-dashboard-card rounded-xl border p-5">
+      <h3 className="theme-dashboard-text text-sm font-bold">Proyectos por estado</h3>
       {data.length === 0 ? (
-        <div className="mt-5 rounded-lg border border-dashed border-[#344067] bg-[#0F172A] p-4 text-xs text-slate-400">
+        <div className="theme-dashboard-border theme-dashboard-surface mt-5 rounded-lg border border-dashed p-4 text-xs theme-dashboard-muted">
           Aún no hay proyectos en el rango seleccionado.
         </div>
       ) : (
@@ -481,11 +481,11 @@ export function TemplateStatusChart({ data }: { data: StatusMetricPoint[] }) {
             const width = Math.max((item.count / total) * 100, 4)
             return (
               <div key={item.status}>
-                <div className="mb-1 flex justify-between text-xs text-slate-300">
+                <div className="theme-dashboard-muted mb-1 flex justify-between text-xs">
                   <span>{STATUS_LABEL[item.status] || item.status}</span>
                   <span>{item.count}</span>
                 </div>
-                <div className="h-2 rounded-full bg-[#283250]">
+                <div className="theme-dashboard-border h-2 rounded-full border">
                   <div className="h-2 rounded-full bg-gradient-to-r from-[#4C58FF] to-[#22D3EE]" style={{ width: `${width}%` }} />
                 </div>
               </div>
@@ -501,10 +501,10 @@ export function TemplateWeeklyChart({ data }: { data: WeeklyMetricPoint[] }) {
   const maxRevenue = Math.max(...data.map((point) => point.revenue), 1)
 
   return (
-    <section className="rounded-xl border border-[#2F3A5C] bg-[linear-gradient(180deg,#151D34_0%,#10182A_100%)] p-5">
-      <h3 className="text-sm font-semibold text-white">Evolución semanal</h3>
+    <section className="theme-dashboard-card rounded-xl border p-5">
+      <h3 className="theme-dashboard-text text-sm font-bold">Evolución semanal</h3>
       {data.length === 0 ? (
-        <div className="mt-5 rounded-lg border border-dashed border-[#344067] bg-[#0F172A] p-4 text-xs text-slate-400">
+        <div className="theme-dashboard-border theme-dashboard-surface mt-5 rounded-lg border border-dashed p-4 text-xs theme-dashboard-muted">
           Sin actividad semanal para este periodo.
         </div>
       ) : (
@@ -516,8 +516,8 @@ export function TemplateWeeklyChart({ data }: { data: WeeklyMetricPoint[] }) {
                 <div className="mx-auto h-28 w-7 rounded-md bg-[#27324E] flex items-end">
                   <div className="w-full rounded-md bg-gradient-to-t from-[#4C58FF] to-[#7DD3FC]" style={{ height: `${h}%` }} />
                 </div>
-                <p className="mt-2 text-[10px] text-slate-400">{item.label}</p>
-                <p className="text-[10px] font-semibold text-slate-100">{item.completedProjects}</p>
+                <p className="theme-dashboard-muted mt-2 text-[10px]">{item.label}</p>
+                <p className="theme-dashboard-text text-[10px] font-semibold">{item.completedProjects}</p>
               </div>
             )
           })}

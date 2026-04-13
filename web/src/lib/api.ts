@@ -47,11 +47,12 @@ export const projectsApi = {
     api.patch<import('@/types').Project>(`/api/projects/${id}/deliver`, body),
   review:  (id: string, body: { action: 'approve' | 'request-revision'; message?: string }) =>
     api.patch<import('@/types').Project>(`/api/projects/${id}/review`, body),
+  feedback: (id: string, body: { rating: number; nps?: number; comment?: string }) =>
+    api.post<{ rating: number; nps?: number; comment?: string }>(`/api/projects/${id}/feedback`, body),
 }
 
 // ─── Admin ────────────────────────────────────────────────────
 export const adminApi = {
-  dashboard:  () => api.get<unknown>('/api/admin/dashboard'),
   assign:     (id: string, designerId: string) =>
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}/assign`, { designerId }),
   complete:   (id: string) =>
@@ -70,13 +71,6 @@ export const adminApi = {
   financiero:  () => api.get<import('@/types').FinancieroReport>('/api/admin/financiero'),
   anticipo:    (id: string) =>
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}/anticipo`, {}),
-}
-
-// ─── Servicios ────────────────────────────────────────────────
-export const servicesApi = {
-  list:  () => api.get<unknown[]>('/api/services'),
-  quote: (data: { serviceType: string; complexity: string; urgency: string }) =>
-    api.post<import('@/types').QuoteResult>('/api/services/quote', data),
 }
 
 export const quotesApi = {

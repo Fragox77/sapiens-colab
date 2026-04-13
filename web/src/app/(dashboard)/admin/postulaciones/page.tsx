@@ -34,8 +34,8 @@ export default function PostulacionesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-100">Postulaciones</h1>
-        <p className="mt-1 text-sm text-slate-400">{applications.length} postulantes en total</p>
+        <h1 className="theme-dashboard-text text-3xl font-bold">Postulaciones</h1>
+        <p className="theme-dashboard-muted mt-1 text-sm">{applications.length} postulantes en total</p>
       </div>
 
       {/* Filtros */}
@@ -47,7 +47,7 @@ export default function PostulacionesPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
               filter === f
                 ? 'bg-[#4C58FF] text-white shadow-[0_8px_20px_rgba(76,88,255,0.35)]'
-                : 'bg-[#131B31] border border-[#2F3A5C] text-slate-300 hover:bg-[#18233F]'
+                : 'theme-dashboard-surface theme-dashboard-border border theme-dashboard-muted hover:bg-[var(--dashboard-surface-2)]'
             }`}
           >
             {f === 'todas' ? 'Todas' : STATUS_META[f]?.label ?? f}
@@ -56,9 +56,9 @@ export default function PostulacionesPage() {
       </div>
 
       {loading ? (
-        <div className="text-slate-400 text-sm">Cargando postulaciones...</div>
+        <div className="theme-dashboard-muted text-sm">Cargando postulaciones...</div>
       ) : visible.length === 0 ? (
-        <div className="py-12 text-center text-sm text-slate-400">No hay postulaciones en este estado.</div>
+        <div className="theme-dashboard-muted py-12 text-center text-sm">No hay postulaciones en este estado.</div>
       ) : (
         <div className="space-y-3">
           {visible.map(app => {
@@ -67,7 +67,7 @@ export default function PostulacionesPage() {
               <div
                 key={app._id}
                 onClick={() => router.push(`/admin/postulaciones/${app._id}`)}
-                className="cursor-pointer rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5 transition-all hover:border-[#4C58FF]/40"
+                className="theme-dashboard-border theme-dashboard-surface cursor-pointer rounded-xl border p-5 transition-all hover:border-[#4C58FF]/40"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -75,22 +75,22 @@ export default function PostulacionesPage() {
                       {app.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-slate-100">{app.name}</div>
-                      <div className="text-xs text-slate-400">{app.email}</div>
-                      <div className="mt-0.5 text-xs capitalize text-slate-400">{app.role} · {app.experience} años exp.</div>
+                      <div className="theme-dashboard-text text-sm font-semibold">{app.name}</div>
+                      <div className="theme-dashboard-muted text-xs">{app.email}</div>
+                      <div className="theme-dashboard-muted mt-0.5 text-xs capitalize">{app.role} · {app.experience} años exp.</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {app.level ? (
                       <div className="text-center">
-                        <div className="text-xl font-black text-slate-100">{app.level}</div>
-                        <div className="text-xs text-slate-400">nivel</div>
+                        <div className="theme-dashboard-text text-xl font-black">{app.level}</div>
+                        <div className="theme-dashboard-muted text-xs">nivel</div>
                       </div>
                     ) : null}
                     {app.payRange ? (
                       <div className="text-right hidden sm:block">
-                        <div className="text-xs text-slate-400">Rango</div>
-                        <div className="text-sm font-semibold text-slate-100">{app.payRange}</div>
+                        <div className="theme-dashboard-muted text-xs">Rango</div>
+                        <div className="theme-dashboard-text text-sm font-semibold">{app.payRange}</div>
                       </div>
                     ) : null}
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${meta.color}`}>
@@ -98,7 +98,7 @@ export default function PostulacionesPage() {
                     </span>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-slate-500">
+                <div className="theme-dashboard-muted mt-3 text-xs">
                   {new Date(app.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>

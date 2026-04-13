@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,14 +8,104 @@
   --cobalt-deep: #13112e;
   --coral: #FF4D6D;
   --platinum: #F5F7FA;
+
+  --font-ui: 'Nunito Sans', sans-serif;
+  --font-heading: 'Manrope', 'Nunito Sans', sans-serif;
+
+  --dashboard-bg: #eef2ff;
+  --dashboard-surface: #ffffff;
+  --dashboard-surface-2: #f6f8ff;
+  --dashboard-header: #ffffffcc;
+  --dashboard-sidebar: linear-gradient(180deg, #ffffff 0%, #f5f7ff 100%);
+  --dashboard-border: #dbe3f5;
+  --dashboard-text: #111827;
+  --dashboard-muted: #64748b;
+  --dashboard-accent: #4c58ff;
+  --dashboard-card-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme='dark'] {
+  --dashboard-bg: #0f172a;
+  --dashboard-surface: #121a2f;
+  --dashboard-surface-2: #10182a;
+  --dashboard-header: #0e1324e6;
+  --dashboard-sidebar: linear-gradient(180deg, #0e1324 0%, #090d18 100%);
+  --dashboard-border: #2f3a5c;
+  --dashboard-text: #e5e7eb;
+  --dashboard-muted: #94a3b8;
+  --dashboard-accent: #4c58ff;
+  --dashboard-card-shadow: 0 18px 45px rgba(2, 6, 23, 0.52);
 }
 
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-ui);
   background: var(--platinum);
   color: var(--cobalt);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.theme-dashboard-shell {
+  background: var(--dashboard-bg);
+  color: var(--dashboard-text);
+}
+
+.theme-dashboard-header {
+  border-color: var(--dashboard-border);
+  background: var(--dashboard-header);
+}
+
+.theme-dashboard-sidebar {
+  border-color: var(--dashboard-border);
+  background: var(--dashboard-sidebar);
+}
+
+.theme-dashboard-panel {
+  border-color: var(--dashboard-border);
+  background: linear-gradient(180deg, var(--dashboard-surface) 0%, var(--dashboard-surface-2) 100%);
+  box-shadow: var(--dashboard-card-shadow);
+}
+
+.theme-dashboard-card {
+  border-color: var(--dashboard-border);
+  background: linear-gradient(180deg, var(--dashboard-surface) 0%, var(--dashboard-surface-2) 100%);
+  box-shadow: var(--dashboard-card-shadow);
+}
+
+.theme-dashboard-border {
+  border-color: var(--dashboard-border);
+}
+
+.theme-dashboard-text {
+  color: var(--dashboard-text);
+}
+
+.theme-dashboard-muted {
+  color: var(--dashboard-muted);
+}
+
+.theme-dashboard-surface {
+  background: var(--dashboard-surface);
+}
+
+.theme-dashboard-surface-2 {
+  background: var(--dashboard-surface-2);
+}
+
+.theme-dashboard-input {
+  border: 1px solid var(--dashboard-border);
+  background: var(--dashboard-surface);
+  color: var(--dashboard-text);
+}
+
+.theme-dashboard-button {
+  background: var(--dashboard-accent);
+  color: #fff;
 }
 
 /* Fix autofill Chrome — fondo oscuro + texto blanco */

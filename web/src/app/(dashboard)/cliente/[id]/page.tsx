@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation'
 import { projectsApi } from '@/lib/api'
 import type { Project } from '@/types'
 
+const STARS = [1, 2, 3, 4, 5]
+
 const STATUS_LABEL: Record<string, string> = {
   cotizado:   'Esperando anticipo',
   activo:     'En producción',
@@ -34,6 +36,15 @@ export default function ProyectoDetallePage() {
   const [error, setError]      = useState('')
   const [reviewing, setReviewing] = useState(false)
   const [reviewMsg, setReviewMsg] = useState('')
+
+  // Feedback state
+  const [fbRating, setFbRating]   = useState(0)
+  const [fbHover, setFbHover]     = useState(0)
+  const [fbNps, setFbNps]         = useState<number | ''>('')
+  const [fbComment, setFbComment] = useState('')
+  const [fbSending, setFbSending] = useState(false)
+  const [fbDone, setFbDone]       = useState(false)
+  const [fbError, setFbError]     = useState('')
 
   async function load() {
     try {
@@ -74,8 +85,27 @@ export default function ProyectoDetallePage() {
     </div>
   )
 
+  async function handleFeedback() {
+    if (!project || fbRating === 0) return
+    setFbSending(true)
+    setFbError('')
+    try {
+      await projectsApi.feedback(id, {
+        rating: fbRating,
+        nps: fbNps !== '' ? Number(fbNps) : undefined,
+        comment: fbComment.trim() || undefined,
+      })
+      setFbDone(true)
+    } catch (err) {
+      setFbError(err instanceof Error ? err.message : 'Error al enviar calificación')
+    } finally {
+      setFbSending(false)
+    }
+  }
+
   const p = project
-  const canReview = p.status === 'revision'
+  const canReview   = p.status === 'revision'
+  const canFeedback = (p.status === 'aprobado' || p.status === 'completado') && !fbDone
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -86,8 +116,8 @@ export default function ProyectoDetallePage() {
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-cobalt">{p.title}</h1>
-            <p className="text-sm text-gray-400 mt-1 capitalize">
+            <h1 className="theme-dashboard-text text-2xl font-bold">{p.title}</h1>
+            <p className="theme-dashboard-muted text-sm mt-1 capitalize">
               {p.serviceType} · {p.complexity} · {p.urgency}
             </p>
           </div>
@@ -98,45 +128,45 @@ export default function ProyectoDetallePage() {
       </div>
 
       {/* Brief */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Brief</h2>
-        <p className="text-sm text-cobalt whitespace-pre-line">{p.description}</p>
+      <div className="theme-dashboard-surface theme-dashboard-border rounded-xl border p-5">
+        <h2 className="theme-dashboard-muted text-xs font-semibold uppercase tracking-wider mb-3">Brief</h2>
+        <p className="theme-dashboard-text text-sm whitespace-pre-line">{p.description}</p>
         {p.format && (
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="theme-dashboard-muted text-xs mt-3">
             <span className="font-medium">Formatos:</span> {p.format}
           </p>
         )}
       </div>
 
       {/* Financiero */}
-      <div className="bg-cobalt rounded-xl p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">Financiero</h2>
+      <div className="theme-dashboard-panel theme-dashboard-border rounded-xl border p-5">
+        <h2 className="theme-dashboard-muted text-xs font-semibold uppercase tracking-wider mb-4">Financiero</h2>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-white/50">Subtotal</span>
-            <span className="text-white">{fmt(p.pricing.subtotal)}</span>
+            <span className="theme-dashboard-muted">Subtotal</span>
+            <span className="theme-dashboard-text">{fmt(p.pricing.subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-white/50">IVA (19%)</span>
-            <span className="text-white">{fmt(p.pricing.iva)}</span>
+            <span className="theme-dashboard-muted">IVA (19%)</span>
+            <span className="theme-dashboard-text">{fmt(p.pricing.iva)}</span>
           </div>
-          <div className="border-t border-white/10 pt-2 flex justify-between">
-            <span className="font-bold text-white">Total</span>
+          <div className="theme-dashboard-border border-t pt-2 flex justify-between">
+            <span className="theme-dashboard-text font-bold">Total</span>
             <span className="font-bold text-coral text-xl">{fmt(p.pricing.total)}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <div className={`rounded-lg p-3 border ${p.payments.anticipo.paid ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
-            <div className="text-xs text-white/40 mb-1">Anticipo (50%)</div>
-            <div className="font-bold text-white text-sm">{fmt(p.pricing.anticipo)}</div>
+          <div className={`rounded-lg p-3 border ${p.payments.anticipo.paid ? 'border-green-500/30 bg-green-500/10' : 'theme-dashboard-border theme-dashboard-surface-2'}`}>
+            <div className="theme-dashboard-muted text-xs mb-1">Anticipo (50%)</div>
+            <div className="theme-dashboard-text font-bold text-sm">{fmt(p.pricing.anticipo)}</div>
             <div className={`text-xs mt-1 ${p.payments.anticipo.paid ? 'text-green-400' : 'text-yellow-400'}`}>
               {p.payments.anticipo.paid ? '✓ Pagado' : 'Pendiente'}
             </div>
           </div>
-          <div className={`rounded-lg p-3 border ${p.payments.balance.paid ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
-            <div className="text-xs text-white/40 mb-1">Balance (50%)</div>
-            <div className="font-bold text-white text-sm">{fmt(p.pricing.balance)}</div>
+          <div className={`rounded-lg p-3 border ${p.payments.balance.paid ? 'border-green-500/30 bg-green-500/10' : 'theme-dashboard-border theme-dashboard-surface-2'}`}>
+            <div className="theme-dashboard-muted text-xs mb-1">Balance (50%)</div>
+            <div className="theme-dashboard-text font-bold text-sm">{fmt(p.pricing.balance)}</div>
             <div className={`text-xs mt-1 ${p.payments.balance.paid ? 'text-green-400' : 'text-white/30'}`}>
               {p.payments.balance.paid ? '✓ Pagado' : 'Al cierre'}
             </div>
@@ -222,6 +252,93 @@ export default function ProyectoDetallePage() {
               ✓ Aprobar
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Calificación */}
+      {fbDone && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+          <div className="text-2xl mb-1">🎉</div>
+          <p className="text-sm font-semibold text-green-700">¡Gracias por tu calificación!</p>
+          <p className="text-xs text-green-600 mt-1">Tu opinión nos ayuda a mejorar.</p>
+        </div>
+      )}
+
+      {canFeedback && (
+        <div className="bg-white border border-yellow-100 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-cobalt mb-0.5">Califica este proyecto</h2>
+          <p className="text-xs text-gray-400 mb-4">Tu opinión ayuda a mejorar nuestra agencia.</p>
+
+          {/* Estrellas */}
+          <div className="mb-4">
+            <div className="text-xs text-gray-400 mb-2">Calificación general</div>
+            <div className="flex gap-1">
+              {STARS.map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setFbRating(star)}
+                  onMouseEnter={() => setFbHover(star)}
+                  onMouseLeave={() => setFbHover(0)}
+                  className="text-2xl transition-transform hover:scale-110 focus:outline-none"
+                >
+                  {star <= (fbHover || fbRating) ? '★' : '☆'}
+                </button>
+              ))}
+              {fbRating > 0 && (
+                <span className="ml-2 text-xs text-gray-400 self-center">
+                  {['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'][fbRating]}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* NPS */}
+          <div className="mb-4">
+            <div className="text-xs text-gray-400 mb-2">
+              ¿Con qué probabilidad nos recomendarías? (0–10)
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {Array.from({ length: 11 }, (_, i) => i).map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setFbNps(n)}
+                  className={`w-8 h-8 rounded-lg text-xs font-semibold border transition-colors ${
+                    fbNps === n
+                      ? 'bg-cobalt text-white border-cobalt'
+                      : 'border-gray-200 text-gray-500 hover:border-cobalt/40'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Comentario */}
+          <div className="mb-4">
+            <div className="text-xs text-gray-400 mb-2">Comentario (opcional)</div>
+            <textarea
+              rows={3}
+              value={fbComment}
+              onChange={e => setFbComment(e.target.value)}
+              placeholder="¿Qué te pareció el trabajo? ¿Qué podríamos mejorar?"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/30 resize-none"
+            />
+          </div>
+
+          {fbError && (
+            <div className="mb-3 text-xs text-red-600 bg-red-50 rounded-lg p-2">{fbError}</div>
+          )}
+
+          <button
+            onClick={handleFeedback}
+            disabled={fbRating === 0 || fbSending}
+            className="w-full bg-cobalt text-white text-sm font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {fbSending ? 'Enviando...' : 'Enviar calificación'}
+          </button>
         </div>
       )}
 

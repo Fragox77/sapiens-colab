@@ -16,6 +16,7 @@ const navByRole: Record<Role, Array<{ href: string; label: string }>> = {
     { href: '/admin/proyectos', label: 'Proyectos' },
     { href: '/admin/financiero', label: 'Finanzas' },
     { href: '/admin/postulaciones', label: 'Postulaciones' },
+    { href: '/admin/planes', label: 'Planes' },
   ],
 }
 
@@ -29,12 +30,12 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
   const items = navByRole[user.role] || []
 
   return (
-    <aside className="relative w-64 border-r border-[#2A3352] bg-[linear-gradient(180deg,#0E1324_0%,#090D18_100%)] backdrop-blur-xl">
+    <aside className="theme-dashboard-sidebar relative w-64 border-r backdrop-blur-xl">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_-20%_0%,rgba(79,70,229,0.18),transparent_45%)]" />
       <div className="px-5 py-5 border-b border-white/10">
         <Link href="/" className="block">
           <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/90">Sapiens</p>
-          <p className="text-sm font-semibold text-white">Colab Platform</p>
+          <p className="theme-dashboard-text text-sm font-bold">Colab Platform</p>
         </Link>
       </div>
 
@@ -47,8 +48,8 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
               href={item.href}
               className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                 active
-                  ? 'bg-[#3B47F6]/25 text-white border border-[#4C58FF]/40'
-                  : 'text-slate-300 hover:bg-white/10 hover:text-white border border-transparent'
+                  ? 'bg-[#3B47F6]/20 theme-dashboard-text border border-[#4C58FF]/40'
+                  : 'theme-dashboard-muted hover:bg-white/10 hover:text-[var(--dashboard-text)] border border-transparent'
               }`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-[#7280FF]' : 'bg-slate-500'}`} />
@@ -58,12 +59,12 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
         })}
       </nav>
 
-      <div className="absolute bottom-0 w-64 border-t border-white/10 bg-slate-950/65 px-4 py-4">
-        <p className="text-sm font-medium text-white truncate">{user.name}</p>
-        <p className="text-xs text-slate-400 capitalize mb-3">{user.role}</p>
+      <div className="theme-dashboard-surface absolute bottom-0 w-64 border-t theme-dashboard-border px-4 py-4">
+        <p className="theme-dashboard-text text-sm font-semibold truncate">{user.name}</p>
+        <p className="theme-dashboard-muted text-xs capitalize mb-3">{user.role}</p>
         <button
           onClick={onSignOut}
-          className="text-xs text-slate-300 hover:text-white"
+          className="theme-dashboard-muted text-xs hover:text-[var(--dashboard-text)]"
         >
           Cerrar sesion
         </button>

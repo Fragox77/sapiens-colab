@@ -62,10 +62,10 @@ export default function FinancieroPage() {
 
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-cobalt rounded-xl p-5">
-          <div className="text-white/40 text-xs uppercase tracking-wider mb-2">Por cobrar</div>
-          <div className="text-3xl font-black text-white">{fmt(data?.totalPendiente || 0)}</div>
-          <div className="text-white/40 text-xs mt-1">{pendientes.length} proyecto(s)</div>
+        <div className="theme-dashboard-panel theme-dashboard-border rounded-xl border p-5">
+          <div className="theme-dashboard-muted text-xs uppercase tracking-wider mb-2">Por cobrar</div>
+          <div className="theme-dashboard-text text-3xl font-black">{fmt(data?.totalPendiente || 0)}</div>
+          <div className="theme-dashboard-muted text-xs mt-1">{pendientes.length} proyecto(s)</div>
         </div>
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <div className="text-gray-400 text-xs uppercase tracking-wider mb-2">Ya cobrado</div>

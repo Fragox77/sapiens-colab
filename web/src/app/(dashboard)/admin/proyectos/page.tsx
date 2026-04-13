@@ -59,8 +59,8 @@ export default function AdminProyectosPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Proyectos</h1>
-          <p className="mt-1 text-sm text-slate-400">{projects.length} en total</p>
+          <h1 className="theme-dashboard-text text-3xl font-bold">Proyectos</h1>
+          <p className="theme-dashboard-muted mt-1 text-sm">{projects.length} en total</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export default function AdminProyectosPage() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Buscar por título, cliente o diseñador..."
-        className="mb-4 w-full rounded-xl border border-[#334167] bg-[#0F172A] px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#4C58FF]"
+        className="theme-dashboard-input mb-4 w-full rounded-xl px-4 py-3 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF]"
       />
 
       {/* Filtros */}
@@ -82,7 +82,7 @@ export default function AdminProyectosPage() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               filter === f.value
                 ? 'bg-[#4C58FF] text-white shadow-[0_8px_20px_rgba(76,88,255,0.35)]'
-                : 'bg-[#131B31] border border-[#2F3A5C] text-slate-300 hover:bg-[#18233F]'
+                : 'theme-dashboard-surface theme-dashboard-border border theme-dashboard-muted hover:bg-[var(--dashboard-surface-2)]'
             }`}
           >
             {f.label}
@@ -96,9 +96,9 @@ export default function AdminProyectosPage() {
       </div>
 
       {loading ? (
-        <div className="text-slate-400 text-sm">Cargando proyectos...</div>
+        <div className="theme-dashboard-muted text-sm">Cargando proyectos...</div>
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center text-sm text-slate-400">
+        <div className="theme-dashboard-muted py-12 text-center text-sm">
           No hay proyectos con este filtro.
         </div>
       ) : (
@@ -110,11 +110,11 @@ export default function AdminProyectosPage() {
               <a
                 key={p._id}
                 href={`/admin/proyectos/${p._id}`}
-                className="flex items-center gap-4 rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4 transition-colors hover:border-[#4C58FF]/40"
+                className="theme-dashboard-border theme-dashboard-surface flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-[#4C58FF]/40"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-slate-100 truncate">{p.title}</div>
-                  <div className="mt-0.5 text-xs text-slate-400">
+                  <div className="theme-dashboard-text text-sm font-semibold truncate">{p.title}</div>
+                  <div className="theme-dashboard-muted mt-0.5 text-xs">
                     {client?.name || '—'}
                     {designer && <span> → {designer.name}</span>}
                     <span className="ml-2">· {new Date(p.createdAt).toLocaleDateString('es-CO')}</span>
@@ -122,8 +122,8 @@ export default function AdminProyectosPage() {
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-right hidden sm:block">
-                    <div className="text-sm font-bold text-slate-100">{fmt(p.pricing.total)}</div>
-                    <div className="text-xs text-slate-400">Rev. {p.revisions.used}/{p.revisions.max}</div>
+                    <div className="theme-dashboard-text text-sm font-bold">{fmt(p.pricing.total)}</div>
+                    <div className="theme-dashboard-muted text-xs">Rev. {p.revisions.used}/{p.revisions.max}</div>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>
                     {STATUS_LABEL[p.status]}

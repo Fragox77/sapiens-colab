@@ -78,7 +78,7 @@ export default function AdminProyectoPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <p className="text-slate-400 text-sm">Cargando...</p>
+      <p className="theme-dashboard-muted text-sm">Cargando...</p>
     </div>
   )
 
@@ -94,13 +94,13 @@ export default function AdminProyectoPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <a href="/admin/proyectos" className="mb-3 inline-block text-xs text-slate-400 transition-colors hover:text-[#A5B4FC]">
+        <a href="/admin/proyectos" className="theme-dashboard-muted mb-3 inline-block text-xs transition-colors hover:text-[#A5B4FC]">
           ← Todos los proyectos
         </a>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-100">{p.title}</h1>
-            <p className="mt-1 text-sm capitalize text-slate-400">{p.serviceType} · {p.complexity} · {p.urgency}</p>
+            <h1 className="theme-dashboard-text text-3xl font-bold">{p.title}</h1>
+            <p className="theme-dashboard-muted mt-1 text-sm capitalize">{p.serviceType} · {p.complexity} · {p.urgency}</p>
           </div>
           <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[p.status]}`}>
             {STATUS_LABEL[p.status]}
@@ -110,45 +110,45 @@ export default function AdminProyectoPage() {
 
       {/* Partes */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4">
-          <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Cliente</div>
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-4">
+          <div className="theme-dashboard-muted mb-2 text-xs uppercase tracking-wider">Cliente</div>
           {client ? (
             <>
-              <div className="text-sm font-semibold text-slate-100">{client.name}</div>
-              <div className="text-xs text-slate-400">{client.company || client.email}</div>
+              <div className="theme-dashboard-text text-sm font-semibold">{client.name}</div>
+              <div className="theme-dashboard-muted text-xs">{client.company || client.email}</div>
             </>
-          ) : <div className="text-sm text-slate-500">—</div>}
+          ) : <div className="theme-dashboard-muted text-sm">—</div>}
         </div>
-        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-4">
-          <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Diseñador</div>
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-4">
+          <div className="theme-dashboard-muted mb-2 text-xs uppercase tracking-wider">Diseñador</div>
           {designer ? (
             <>
-              <div className="text-sm font-semibold text-slate-100">{designer.name}</div>
-              <div className="text-xs text-slate-400">Nivel {designer.level} · {designer.specialty}</div>
+              <div className="theme-dashboard-text text-sm font-semibold">{designer.name}</div>
+              <div className="theme-dashboard-muted text-xs">Nivel {designer.level} · {designer.specialty}</div>
             </>
-          ) : <div className="text-sm text-slate-500">Sin asignar</div>}
+          ) : <div className="theme-dashboard-muted text-sm">Sin asignar</div>}
         </div>
       </div>
 
       {/* Brief */}
-      <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Brief</h2>
-        <p className="whitespace-pre-line text-sm text-slate-200">{p.description}</p>
+      <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-5">
+        <h2 className="theme-dashboard-muted mb-3 text-xs font-semibold uppercase tracking-wider">Brief</h2>
+        <p className="theme-dashboard-text whitespace-pre-line text-sm">{p.description}</p>
         {p.format && (
-          <p className="mt-3 text-xs text-slate-400"><span className="font-medium">Formatos:</span> {p.format}</p>
+          <p className="theme-dashboard-muted mt-3 text-xs"><span className="font-medium">Formatos:</span> {p.format}</p>
         )}
       </div>
 
       {/* Financiero completo */}
-      <div className="bg-cobalt rounded-xl p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-4">Desglose financiero</h2>
+      <div className="theme-dashboard-panel theme-dashboard-border rounded-xl border p-5">
+        <h2 className="theme-dashboard-muted text-xs font-semibold uppercase tracking-wider mb-4">Desglose financiero</h2>
         <div className="space-y-2">
           <Row label="Subtotal"         value={fmt(p.pricing.subtotal)} />
           <Row label="IVA (19%)"        value={fmt(p.pricing.iva)} />
-          <div className="border-t border-white/10 pt-2">
+          <div className="theme-dashboard-border border-t pt-2">
             <Row label="Total cliente"  value={fmt(p.pricing.total)} bold />
           </div>
-          <div className="border-t border-white/10 pt-2 space-y-1.5">
+          <div className="theme-dashboard-border border-t pt-2 space-y-1.5">
             <Row label="Comisión SAPIENS (25%)" value={fmt(p.pricing.commission)} dim />
             <Row label="Pago diseñador (neto)"  value={fmt(p.pricing.designerPay)} dim />
           </div>
@@ -161,13 +161,13 @@ export default function AdminProyectoPage() {
 
       {/* Asignar diseñador */}
       {p.status === 'cotizado' && (
-        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">Asignar diseñador</h2>
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-5">
+          <h2 className="theme-dashboard-text mb-3 text-sm font-semibold">Asignar diseñador</h2>
           <div className="flex gap-3">
             <select
               value={selectedDesigner}
               onChange={e => setSelectedDesigner(e.target.value)}
-              className="flex-1 rounded-lg border border-[#334167] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-[#4C58FF]"
+              className="theme-dashboard-input flex-1 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#4C58FF]"
             >
               <option value="">Selecciona diseñador...</option>
               {designers
@@ -214,18 +214,18 @@ export default function AdminProyectoPage() {
 
       {/* Entregables */}
       {p.deliverables.length > 0 && (
-        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-5">
+          <h2 className="theme-dashboard-muted mb-3 text-xs font-semibold uppercase tracking-wider">
             Entregables ({p.deliverables.length})
           </h2>
           <div className="space-y-2">
             {p.deliverables.map((d, i) => (
               <a key={i} href={d.url} target="_blank" rel="noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-[#2F3A5C] bg-[#0F172A] p-3 transition-colors hover:border-[#4C58FF]/40">
+                className="theme-dashboard-border theme-dashboard-surface-2 flex items-center gap-3 rounded-lg border p-3 transition-colors hover:border-[#4C58FF]/40">
                 <span>📎</span>
                 <div className="flex-1 min-w-0">
-                  <div className="truncate text-sm font-medium text-slate-100">{d.name}</div>
-                  <div className="text-xs text-slate-400">Ronda {d.round}</div>
+                  <div className="theme-dashboard-text truncate text-sm font-medium">{d.name}</div>
+                  <div className="theme-dashboard-muted text-xs">Ronda {d.round}</div>
                 </div>
                 <span className="text-xs font-medium text-[#A5B4FC]">Ver →</span>
               </a>
@@ -235,23 +235,23 @@ export default function AdminProyectoPage() {
       )}
 
       {/* Revisiones */}
-      <div className="text-xs text-slate-400">
+      <div className="theme-dashboard-muted text-xs">
         Revisiones: {p.revisions.used}/{p.revisions.max}
         {p.revisions.extra > 0 && <span className="ml-2 text-rose-300">{p.revisions.extra} extra(s)</span>}
       </div>
 
       {/* Timeline */}
       {p.timeline.length > 0 && (
-        <div className="rounded-xl border border-[#2F3A5C] bg-[#121A2F] p-5">
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Historial</h2>
+        <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-5">
+          <h2 className="theme-dashboard-muted mb-4 text-xs font-semibold uppercase tracking-wider">Historial</h2>
           <div className="space-y-3">
             {[...p.timeline].reverse().map((t, i) => (
               <div key={i} className="flex gap-3">
                 <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#7280FF]" />
                 <div>
-                  <div className="text-xs font-medium text-slate-200">{t.action.replace(/_/g, ' ')}</div>
-                  {t.message && <div className="mt-0.5 text-xs text-slate-400">{t.message}</div>}
-                  <div className="mt-0.5 text-xs text-slate-500">
+                  <div className="theme-dashboard-text text-xs font-medium">{t.action.replace(/_/g, ' ')}</div>
+                  {t.message && <div className="theme-dashboard-muted mt-0.5 text-xs">{t.message}</div>}
+                  <div className="theme-dashboard-muted mt-0.5 text-xs">
                     {new Date(t.createdAt).toLocaleString('es-CO')}
                   </div>
                 </div>
@@ -267,17 +267,17 @@ export default function AdminProyectoPage() {
 function Row({ label, value, bold, dim }: { label: string; value: string; bold?: boolean; dim?: boolean }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className={dim ? 'text-white/30' : 'text-white/50'}>{label}</span>
-      <span className={`${bold ? 'font-bold text-coral text-base' : dim ? 'text-white/40' : 'text-white'}`}>{value}</span>
+      <span className={dim ? 'text-slate-500' : 'theme-dashboard-muted'}>{label}</span>
+      <span className={`${bold ? 'font-bold text-coral text-base' : dim ? 'text-slate-400' : 'theme-dashboard-text'}`}>{value}</span>
     </div>
   )
 }
 
 function PayBlock({ label, amount, paid }: { label: string; amount: string; paid: boolean }) {
   return (
-    <div className={`rounded-lg p-3 border ${paid ? 'border-green-500/30 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
-      <div className="text-xs text-white/40 mb-1">{label}</div>
-      <div className="font-bold text-white text-sm">{amount}</div>
+    <div className={`rounded-lg p-3 border ${paid ? 'border-green-500/30 bg-green-500/10' : 'theme-dashboard-border theme-dashboard-surface-2'}`}>
+      <div className="theme-dashboard-muted text-xs mb-1">{label}</div>
+      <div className="theme-dashboard-text font-bold text-sm">{amount}</div>
       <div className={`text-xs mt-1 ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
         {paid ? '✓ Pagado' : 'Pendiente'}
       </div>
