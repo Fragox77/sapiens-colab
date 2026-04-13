@@ -8,6 +8,8 @@ const mongoose = require('mongoose')
 const User        = require('../models/User')
 const Project     = require('../models/Project')
 const Application = require('../models/Application')
+const Feedback    = require('../models/Feedback')
+const ActivityLog = require('../models/ActivityLog')
 const { calcular } = require('./cotizador')
 
 async function seed() {
@@ -19,6 +21,8 @@ async function seed() {
     User.deleteMany({}),
     Project.deleteMany({}),
     Application.deleteMany({}),
+    Feedback.deleteMany({}),
+    ActivityLog.deleteMany({}),
   ])
   console.log('🗑  Colecciones limpiadas')
 
@@ -37,16 +41,21 @@ async function seed() {
   const p3Pricing = calcular({ serviceType: 'piezas',       complexity: 'basica',   urgency: 'normal' })
   const p4Pricing = calcular({ serviceType: 'web',          complexity: 'media',    urgency: 'normal' })
 
-  await Project.create([
+  const seededProjects = await Project.create([
     // Proyecto completado — muestra el flujo completo
     {
       client: c1._id, designer: d1._id,
+      clientId: c1._id,
+      assignedTo: d1._id,
       title: 'Identidad de marca TechCo',
       description: 'Necesitamos branding completo: logo, paleta de colores, tipografía y manual de marca para startup de tecnología.',
       serviceType: 'branding', complexity: 'avanzada', urgency: 'normal',
       format: 'PDF editable, PNG transparente, AI vectorial',
       pricing: p1Pricing,
+      price: p1Pricing.total,
+      cost: p1Pricing.designerPay,
       status: 'completado',
+      startedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
       minDesignerLevel: 7,
       deliverables: [{ url: 'https://drive.google.com/ejemplo', name: 'Branding_TechCo_v3.pdf', uploadedAt: new Date(), round: 3 }],
       revisions: { used: 2, max: 2, extra: 0 },
@@ -67,12 +76,17 @@ async function seed() {
     // Proyecto en revisión
     {
       client: c2._id, designer: d2._id,
+      clientId: c2._id,
+      assignedTo: d2._id,
       title: 'Reels para campaña de verano',
       description: 'Necesitamos 3 reels para Instagram sobre nuestros platos especiales de verano. Estilo moderno, colores cálidos.',
       serviceType: 'video-motion', complexity: 'media', urgency: 'prioritario',
       format: 'MP4 1080x1920 (vertical), máx 30s por reel',
       pricing: p2Pricing,
+      price: p2Pricing.total,
+      cost: p2Pricing.designerPay,
       status: 'revision',
+      startedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       minDesignerLevel: 4,
       deliverables: [{ url: 'https://drive.google.com/ejemplo2', name: 'Reels_verano_v1.zip', uploadedAt: new Date(), round: 1 }],
       revisions: { used: 0, max: 2, extra: 0 },
@@ -86,11 +100,14 @@ async function seed() {
     // Proyecto cotizado — esperando asignación
     {
       client: c1._id,
+      clientId: c1._id,
       title: 'Piezas para redes sociales — Lanzamiento',
       description: 'Kit de 10 piezas para el lanzamiento de nuestro nuevo producto. Necesitamos stories, feed y banner para LinkedIn.',
       serviceType: 'piezas', complexity: 'basica', urgency: 'normal',
       format: 'PNG 1080x1080, 1080x1920, 1200x628',
       pricing: p3Pricing,
+      price: p3Pricing.total,
+      cost: p3Pricing.designerPay,
       status: 'cotizado',
       minDesignerLevel: 1,
       revisions: { used: 0, max: 2, extra: 0 },
@@ -100,12 +117,17 @@ async function seed() {
     // Proyecto activo
     {
       client: c2._id, designer: d1._id,
+      clientId: c2._id,
+      assignedTo: d1._id,
       title: 'Sitio web para Restaurante El Sabor',
       description: 'Landing page con menú digital, reservas y galería de platos. Diseño elegante y cálido que refleje nuestra identidad.',
       serviceType: 'web', complexity: 'media', urgency: 'normal',
       format: 'Diseño Figma + handoff para desarrollo',
       pricing: p4Pricing,
+      price: p4Pricing.total,
+      cost: p4Pricing.designerPay,
       status: 'activo',
+      startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       minDesignerLevel: 4,
       revisions: { used: 0, max: 2, extra: 0 },
       payments: { anticipo: { paid: true, paidAt: new Date() }, balance: { paid: false } },
@@ -117,6 +139,36 @@ async function seed() {
   ])
 
   console.log('📦 Proyectos creados')
+
+  await Feedback.create([
+    {
+      project: seededProjects[0]._id,
+      client: c1._id,
+      designer: d1._id,
+      rating: 5,
+      nps: 9,
+      comment: 'Excelente ejecución y comunicación.',
+    },
+    {
+      project: seededProjects[1]._id,
+      client: c2._id,
+      designer: d2._id,
+      rating: 4,
+      nps: 8,
+      comment: 'Muy buena calidad, aun en revisión.',
+    },
+  ])
+
+  await ActivityLog.create([
+    { userId: c1._id, projectId: seededProjects[0]._id, actorRole: 'cliente', eventType: 'project_created' },
+    { userId: admin._id, projectId: seededProjects[0]._id, actorRole: 'admin', eventType: 'project_assigned' },
+    { userId: d1._id, projectId: seededProjects[0]._id, actorRole: 'disenador', eventType: 'deliverable_uploaded', durationMinutes: 240 },
+    { userId: c1._id, projectId: seededProjects[0]._id, actorRole: 'cliente', eventType: 'project_approved' },
+    { userId: admin._id, projectId: seededProjects[0]._id, actorRole: 'admin', eventType: 'project_completed' },
+    { userId: c2._id, projectId: seededProjects[1]._id, actorRole: 'cliente', eventType: 'feedback_submitted' },
+  ])
+
+  console.log('📈 Feedback y actividad creados')
 
   // ─── Postulaciones de ejemplo ─────────────────────────────────────────────
   await Application.create([

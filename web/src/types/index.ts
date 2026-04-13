@@ -156,3 +156,91 @@ export interface FinancieroReport {
   deudaDisenadores: DeudaDisenador[]
   ingresosPorMes: IngresoMes[]
 }
+
+export interface WeeklyMetricPoint {
+  label: string
+  revenue: number
+  cost: number
+  completedProjects: number
+}
+
+export interface StatusMetricPoint {
+  status: string
+  count: number
+}
+
+export interface CollaboratorMetric {
+  designerId: string
+  name: string
+  level: number
+  specialty: string
+  assignedProjects: number
+  completedProjects: number
+  avgDeliveryDays: number
+  avgRating: number
+  ratingsCount: number
+  completionRatePct: number
+  onTimeRatePct: number
+  performanceScore: number
+}
+
+export interface DashboardMetrics {
+  period: { from: string; to: string }
+  business: {
+    revenueTotal: number
+    averageTicket: number
+    marginPct: number
+  }
+  operation: {
+    activeProjects: number
+    completionRatePct: number
+    avgDeliveryDays: number
+    delayedProjects: number
+    delayRatePct: number
+  }
+  talent: {
+    projectsPerDesignerAvg: number
+    avgDeliveryDaysPerDesigner: number
+    topPerformers: CollaboratorMetric[]
+  }
+  client: {
+    satisfactionAvg: number
+    repurchaseRatePct: number
+  }
+  charts: {
+    statusDistribution: StatusMetricPoint[]
+    weeklyEvolution: WeeklyMetricPoint[]
+  }
+}
+
+export interface PerformanceMetrics {
+  period: { from: string; to: string }
+  operation: {
+    activeProjects: number
+    completionRatePct: number
+    avgDeliveryDays: number
+    delayedProjects: number
+    delayRatePct: number
+  }
+  talent: {
+    projectsPerDesignerAvg: number
+    avgDeliveryDaysPerDesigner: number
+    ranking: CollaboratorMetric[]
+  }
+  client: {
+    satisfactionAvg: number
+    repurchaseRatePct: number
+  }
+}
+
+export interface FinanceMetrics {
+  period: { from: string; to: string }
+  business: {
+    revenueTotal: number
+    averageTicket: number
+    marginPct: number
+    costTotal: number
+    completedCount: number
+  }
+  weeklyEvolution: WeeklyMetricPoint[]
+}

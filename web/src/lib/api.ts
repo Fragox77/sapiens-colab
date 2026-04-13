@@ -103,3 +103,22 @@ export const billingApi = {
   changePlan: (plan: 'basic' | 'pro' | 'enterprise') =>
     api.patch<{ tenantId: string; plan: string; commissionRate: number; seats: number; maxActiveProjects: number }>('/api/v1/billing/plan', { plan }),
 }
+
+function buildQuery(params?: { from?: string; to?: string }) {
+  if (!params) return ''
+  const entries = Object.entries(params).filter(([, v]) => Boolean(v))
+  if (entries.length === 0) return ''
+  return `?${new URLSearchParams(entries as [string, string][]).toString()}`
+}
+
+export const metricsApi = {
+  dashboard: (params?: { from?: string; to?: string }) => {
+    return api.get<import('@/types').DashboardMetrics>(`/api/metrics/dashboard${buildQuery(params)}`)
+  },
+  performance: (params?: { from?: string; to?: string }) => {
+    return api.get<import('@/types').PerformanceMetrics>(`/api/metrics/performance${buildQuery(params)}`)
+  },
+  finance: (params?: { from?: string; to?: string }) => {
+    return api.get<import('@/types').FinanceMetrics>(`/api/metrics/finance${buildQuery(params)}`)
+  },
+}

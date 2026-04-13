@@ -2,7 +2,17 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const roles = require('../middleware/roles');
 const Project = require('../models/Project');
+const Feedback = require('../models/Feedback');
+const ActivityLog = require('../models/ActivityLog');
 const { calcular } = require('../utils/cotizador');
+
+async function logActivity(payload) {
+  try {
+    await ActivityLog.create(payload);
+  } catch (_) {
+    // Los logs no deben romper la operacion principal.
+  }
+}
 
 // ─── CLIENTE ──────────────────────────────────────────────────
 
@@ -14,9 +24,20 @@ router.post('/', auth, roles('cliente'), async (req, res) => {
 
     const project = await Project.create({
       client: req.user.id,
+      clientId: req.user.id,
       title, description, serviceType, complexity, urgency, format,
       pricing,
+      price: pricing.total,
+      cost: pricing.designerPay,
       minDesignerLevel: complexity === 'avanzada' ? 7 : complexity === 'media' ? 4 : 1,
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'cliente',
+      eventType: 'project_created',
+      meta: { serviceType, complexity, urgency, price: pricing.total },
     });
 
     // Notificar admin vía WebSocket
@@ -86,6 +107,14 @@ router.patch('/:id/deliver', auth, roles('disenador'), async (req, res) => {
     project.timeline.push({ action: 'ENTREGABLE_SUBIDO', by: req.user.id, message: `Ronda ${round}` });
     await project.save();
 
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'disenador',
+      eventType: 'deliverable_uploaded',
+      meta: { round, status: project.status },
+    });
+
     // Notificar cliente
     req.app.locals.notifyUser(String(project.client), { type: 'DELIVERABLE_READY', projectId: project._id });
 
@@ -121,7 +150,63 @@ router.patch('/:id/review', auth, roles('cliente'), async (req, res) => {
     }
 
     await project.save();
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'cliente',
+      eventType: action === 'approve' ? 'project_approved' : 'project_review_requested',
+      meta: { action, message: message || '' },
+    });
+
     res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/projects/:id/feedback — Cliente califica proyecto completado
+router.post('/:id/feedback', auth, roles('cliente'), async (req, res) => {
+  try {
+    const { rating, nps, comment } = req.body;
+    const score = Number(rating);
+    if (!Number.isFinite(score) || score < 1 || score > 5) {
+      return res.status(400).json({ error: 'rating debe estar entre 1 y 5' });
+    }
+
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+    if (String(project.client) !== req.user.id) {
+      return res.status(403).json({ error: 'No eres el cliente de este proyecto' });
+    }
+    if (!['aprobado', 'completado'].includes(project.status)) {
+      return res.status(400).json({ error: 'Solo puedes calificar proyectos aprobados o completados' });
+    }
+
+    const feedback = await Feedback.findOneAndUpdate(
+      { project: project._id, client: req.user.id },
+      {
+        $set: {
+          project: project._id,
+          client: req.user.id,
+          designer: project.designer || null,
+          rating: score,
+          nps: Number.isFinite(Number(nps)) ? Number(nps) : null,
+          comment: comment ? String(comment).trim() : '',
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'cliente',
+      eventType: 'feedback_submitted',
+      meta: { rating: score },
+    });
+
+    res.status(201).json(feedback);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

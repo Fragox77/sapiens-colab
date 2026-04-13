@@ -1,27 +1,108 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { adminApi, projectsApi } from '@/lib/api'
-import type { Project, User } from '@/types'
+
+import { useEffect, useMemo, useState } from 'react'
+import { adminApi, metricsApi, projectsApi } from '@/lib/api'
+import { KpiCard } from '@/components/dashboard/KpiCard'
+import { StatusChart } from '@/components/dashboard/StatusChart'
+import { WeeklyEvolutionChart } from '@/components/dashboard/WeeklyEvolutionChart'
+import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
+import type { DashboardMetrics, FinanceMetrics, PerformanceMetrics, Project, User } from '@/types'
+
+type Preset = '7d' | '30d' | '90d' | 'custom'
+type Range = { from: Date; to: Date }
+
+function resolveRange(preset: Preset, customFrom: string, customTo: string): Range {
+  const to = new Date()
+  if (preset === 'custom' && customFrom && customTo) {
+    return { from: new Date(customFrom), to: new Date(customTo) }
+  }
+
+  const days = preset === '7d' ? 7 : preset === '90d' ? 90 : 30
+  return { from: new Date(to.getTime() - days * 24 * 60 * 60 * 1000), to }
+}
+
+function previousRange(current: Range): Range {
+  const duration = current.to.getTime() - current.from.getTime()
+  const prevTo = new Date(current.from.getTime() - 1)
+  const prevFrom = new Date(prevTo.getTime() - duration)
+  return { from: prevFrom, to: prevTo }
+}
+
+function calcDelta(current: number, prev: number) {
+  if (!Number.isFinite(prev) || prev === 0) return null
+  return ((current - prev) / prev) * 100
+}
+
+function toInputDate(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
 
 export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [designers, setDesigners] = useState<User[]>([])
-  const [stats, setStats] = useState<{ projects: Record<string, number>; finanzas: Record<string, number> } | null>(null)
+  const [dashboard, setDashboard] = useState<DashboardMetrics | null>(null)
+  const [performance, setPerformance] = useState<PerformanceMetrics | null>(null)
+  const [finance, setFinance] = useState<FinanceMetrics | null>(null)
+
+  const [prevDashboard, setPrevDashboard] = useState<DashboardMetrics | null>(null)
+  const [prevPerformance, setPrevPerformance] = useState<PerformanceMetrics | null>(null)
+  const [prevFinance, setPrevFinance] = useState<FinanceMetrics | null>(null)
+
   const [loading, setLoading] = useState(true)
+  const [metricsLoading, setMetricsLoading] = useState(true)
   const [assigning, setAssigning] = useState<string | null>(null)
   const [selectedDesigner, setSelectedDesigner] = useState<Record<string, string>>({})
 
+  const [preset, setPreset] = useState<Preset>('30d')
+  const defaultTo = useMemo(() => new Date(), [])
+  const defaultFrom = useMemo(() => new Date(defaultTo.getTime() - 30 * 24 * 60 * 60 * 1000), [defaultTo])
+  const [customFrom, setCustomFrom] = useState(toInputDate(defaultFrom))
+  const [customTo, setCustomTo] = useState(toInputDate(defaultTo))
+
+  const currentRange = useMemo(
+    () => resolveRange(preset, customFrom, customTo),
+    [preset, customFrom, customTo]
+  )
+
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
+
+  async function loadMetrics(range: Range) {
+    setMetricsLoading(true)
+    const prevRange = previousRange(range)
+
+    try {
+      const [m, perf, fin, mPrev, perfPrev, finPrev] = await Promise.all([
+        metricsApi.dashboard({ from: range.from.toISOString(), to: range.to.toISOString() }),
+        metricsApi.performance({ from: range.from.toISOString(), to: range.to.toISOString() }),
+        metricsApi.finance({ from: range.from.toISOString(), to: range.to.toISOString() }),
+        metricsApi.dashboard({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
+        metricsApi.performance({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
+        metricsApi.finance({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
+      ])
+
+      setDashboard(m)
+      setPerformance(perf)
+      setFinance(fin)
+      setPrevDashboard(mPrev)
+      setPrevPerformance(perfPrev)
+      setPrevFinance(finPrev)
+    } finally {
+      setMetricsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    Promise.all([projectsApi.list(), adminApi.designers(), adminApi.dashboard()])
-      .then(([p, d, s]) => {
+    Promise.all([projectsApi.list(), adminApi.designers()])
+      .then(([p, d]) => {
         setProjects(p as Project[])
         setDesigners(d as User[])
-        setStats(s as { projects: Record<string, number>; finanzas: Record<string, number> })
       })
       .finally(() => setLoading(false))
   }, [])
 
-  const fmt = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
+  useEffect(() => {
+    loadMetrics(currentRange)
+  }, [currentRange])
 
   async function assign(projectId: string) {
     const designerId = selectedDesigner[projectId]
@@ -29,8 +110,9 @@ export default function AdminDashboard() {
     setAssigning(projectId)
     try {
       await adminApi.assign(projectId, designerId)
-      const updated = await projectsApi.list()
-      setProjects(updated)
+      const updatedProjects = await projectsApi.list()
+      setProjects(updatedProjects)
+      await loadMetrics(currentRange)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Error')
     } finally {
@@ -39,35 +121,119 @@ export default function AdminDashboard() {
   }
 
   const pending = projects.filter(p => p.status === 'cotizado')
-  const active  = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
+  const active = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-cobalt">Panel de administración</h1>
-        <p className="text-sm text-gray-500 mt-1">Vista global SAPIENS COLAB</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-cobalt">Panel de administración</h1>
+          <p className="text-sm text-gray-500 mt-1">Centro operativo y analítico SAPIENS COLAB</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(['7d', '30d', '90d', 'custom'] as Preset[]).map((item) => (
+            <button
+              key={item}
+              onClick={() => setPreset(item)}
+              className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                preset === item ? 'bg-cobalt text-white' : 'bg-white text-cobalt border border-gray-200'
+              }`}
+            >
+              {item === 'custom' ? 'Personalizado' : item.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total proyectos', value: stats.projects.total },
-            { label: 'En producción', value: stats.projects.activos },
-            { label: 'Completados', value: stats.projects.completados },
-            { label: 'Facturado', value: fmt(stats.finanzas.total || 0) },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-5">
-              <div className="text-2xl font-bold text-cobalt">{s.value}</div>
-              <div className="text-xs text-gray-400 mt-1 uppercase tracking-wide">{s.label}</div>
-            </div>
-          ))}
+      {preset === 'custom' && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
+          <input
+            type="date"
+            value={customFrom}
+            onChange={(e) => setCustomFrom(e.target.value)}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+          />
+          <span className="text-xs text-gray-400">a</span>
+          <input
+            type="date"
+            value={customTo}
+            onChange={(e) => setCustomTo(e.target.value)}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+          />
         </div>
       )}
 
-      {loading ? <div className="text-gray-400 text-sm">Cargando...</div> : (
+      {(loading || metricsLoading) ? (
+        <div className="text-gray-400 text-sm">Cargando métricas...</div>
+      ) : (
         <>
-          {/* Por asignar */}
+          {dashboard && finance && (
+            <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+              <KpiCard
+                label="Revenue total"
+                value={fmt(finance.business.revenueTotal)}
+                hint="Negocio"
+                deltaPct={calcDelta(finance.business.revenueTotal, prevFinance?.business.revenueTotal || 0)}
+              />
+              <KpiCard
+                label="Ticket promedio"
+                value={fmt(finance.business.averageTicket)}
+                hint="Negocio"
+                deltaPct={calcDelta(finance.business.averageTicket, prevFinance?.business.averageTicket || 0)}
+              />
+              <KpiCard
+                label="Margen"
+                value={`${dashboard.business.marginPct}%`}
+                hint="Negocio"
+                deltaPct={calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0)}
+              />
+              <KpiCard
+                label="Proyectos activos"
+                value={String(dashboard.operation.activeProjects)}
+                hint="Operación"
+                deltaPct={calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0)}
+              />
+              <KpiCard
+                label="Tasa finalización"
+                value={`${dashboard.operation.completionRatePct}%`}
+                hint="Operación"
+                deltaPct={calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0)}
+              />
+              <KpiCard
+                label="Entrega promedio"
+                value={`${dashboard.operation.avgDeliveryDays} días`}
+                hint="Eficiencia"
+                deltaPct={calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays)}
+              />
+              <KpiCard
+                label="Satisfacción"
+                value={`${dashboard.client.satisfactionAvg}/5`}
+                hint="Cliente"
+                deltaPct={calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0)}
+              />
+              <KpiCard
+                label="Recompra"
+                value={`${dashboard.client.repurchaseRatePct}%`}
+                hint="Cliente"
+                deltaPct={calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0)}
+              />
+            </div>
+          )}
+
+          {dashboard && (
+            <div className="grid gap-4 mb-8 lg:grid-cols-2">
+              <StatusChart data={dashboard.charts.statusDistribution} />
+              <WeeklyEvolutionChart data={dashboard.charts.weeklyEvolution} />
+            </div>
+          )}
+
+          {performance && (
+            <div className="mb-8">
+              <CollaboratorRanking data={performance.talent.ranking.slice(0, 6)} />
+            </div>
+          )}
+
           {pending.length > 0 && (
             <div className="mb-8">
               <h2 className="font-semibold text-cobalt mb-3 flex items-center gap-2">
@@ -118,7 +284,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* En producción */}
           {active.length > 0 && (
             <div>
               <h2 className="font-semibold text-cobalt mb-3 flex items-center gap-2">
@@ -140,6 +305,12 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
+          )}
+
+          {prevPerformance && (
+            <p className="mt-8 text-xs text-gray-500">
+              Comparativos calculados contra un periodo anterior equivalente.
+            </p>
           )}
         </>
       )}

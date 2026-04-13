@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   // Solo diseñadores/colaboradores
   level:       { type: Number, min: 1, max: 10, default: null },   // Escala SAPIENS 1-10
   specialty:   { type: String, default: null },                    // diseñador-grafico | video-motion | ...
+  performanceScore: { type: Number, min: 0, max: 100, default: 0 },
   portfolio:   { type: String, default: null },                    // URL portafolio
   isActive:    { type: Boolean, default: true },
   isAvailable: { type: Boolean, default: true },
@@ -39,5 +40,7 @@ userSchema.methods.toSafeJSON = function () {
   delete obj.password;
   return obj;
 };
+
+userSchema.index({ role: 1, isActive: 1, performanceScore: -1 });
 
 module.exports = mongoose.model('User', userSchema);

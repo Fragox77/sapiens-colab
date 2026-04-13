@@ -4,7 +4,16 @@ const roles = require('../middleware/roles');
 const Project = require('../models/Project');
 const User = require('../models/User');
 const Application = require('../models/Application');
+const ActivityLog = require('../models/ActivityLog');
 const { calcularPagoDisenador } = require('../utils/cotizador');
+
+async function logActivity(payload) {
+  try {
+    await ActivityLog.create(payload);
+  } catch (_) {
+    // Los logs no deben romper endpoints criticos.
+  }
+}
 
 // Todos los endpoints requieren auth + rol admin
 router.use(auth, roles('admin'));
@@ -25,9 +34,22 @@ router.patch('/projects/:id/assign', async (req, res) => {
       return res.status(400).json({ error: `Este proyecto requiere nivel mínimo ${project.minDesignerLevel}. El diseñador está en nivel ${designer.level}` });
 
     project.designer = designerId;
+    project.assignedTo = designerId;
+    if (!project.startedAt) project.startedAt = new Date();
     project.status = 'activo';
+    project.price = project.pricing.total;
+    project.cost = project.pricing.designerPay;
+    project.clientId = project.client;
     project.timeline.push({ action: 'ASIGNADO', by: req.user.id, message: `Asignado a ${designer.name}` });
     await project.save();
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'admin',
+      eventType: 'project_assigned',
+      meta: { designerId, designerName: designer.name },
+    });
 
     // Notificar diseñador
     req.app.locals.notifyUser(designerId, { type: 'PROJECT_ASSIGNED', projectId: project._id });
@@ -52,6 +74,14 @@ router.patch('/projects/:id/complete', async (req, res) => {
     project.payments.balance.paidAt = new Date();
     project.timeline.push({ action: 'COMPLETADO', by: req.user.id });
     await project.save();
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'admin',
+      eventType: 'project_completed',
+      meta: { balancePaid: true, designerPay: project.pricing.designerPay },
+    });
 
     res.json({ project, designerPay: project.pricing.designerPay });
   } catch (err) {
@@ -113,6 +143,24 @@ router.patch('/projects/:id/anticipo', async (req, res) => {
     project.payments.anticipo.paidAt = new Date();
     project.timeline.push({ action: 'ANTICIPO_RECIBIDO', by: req.user.id });
     await project.save();
+
+    await logActivity({
+      userId: req.user.id,
+      projectId: project._id,
+      actorRole: 'admin',
+      eventType: 'payment_received',
+      meta: { type: 'anticipo', amount: project.pricing.anticipo },
+    });
+
+    if (project.status === 'activo') {
+      await logActivity({
+        userId: req.user.id,
+        projectId: project._id,
+        actorRole: 'admin',
+        eventType: 'project_started',
+        meta: { startedAt: new Date().toISOString() },
+      });
+    }
 
     res.json(project);
   } catch (err) {

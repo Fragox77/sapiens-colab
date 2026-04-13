@@ -62,6 +62,13 @@ const projectSchema = new mongoose.Schema({
   deliveredAt:   { type: Date, default: null },
   completedAt:   { type: Date, default: null },
 
+  // ─── Campos analytics (aliases y costos) ───────────────────
+  startedAt:  { type: Date, default: null },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+  clientId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+  price:      { type: Number, default: 0 },
+  cost:       { type: Number, default: 0 },
+
   // ─── Pagos ────────────────────────────────────────────────────
   payments: {
     anticipo: {
@@ -86,5 +93,18 @@ const projectSchema = new mongoose.Schema({
   minDesignerLevel: { type: Number, default: 1 },
 
 }, { timestamps: true });
+
+projectSchema.pre('save', function syncAnalyticsFields(next) {
+  if (!this.clientId && this.client) this.clientId = this.client;
+  if (!this.assignedTo && this.designer) this.assignedTo = this.designer;
+  if (!this.price && this.pricing && this.pricing.total) this.price = this.pricing.total;
+  if (!this.cost && this.pricing && this.pricing.designerPay) this.cost = this.pricing.designerPay;
+  if (!this.startedAt && this.status === 'activo') this.startedAt = new Date();
+  next();
+});
+
+projectSchema.index({ status: 1, createdAt: -1 });
+projectSchema.index({ assignedTo: 1, completedAt: -1 });
+projectSchema.index({ clientId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Project', projectSchema);
