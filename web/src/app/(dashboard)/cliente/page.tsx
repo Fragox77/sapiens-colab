@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { projectsApi } from '@/lib/api'
 import type { Project } from '@/types'
 
@@ -26,9 +27,21 @@ const STATUS_COLOR: Record<string, string> = {
 export default function ClienteDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    projectsApi.list().then(setProjects).finally(() => setLoading(false))
+    async function loadProjects() {
+      try {
+        const data = await projectsApi.list()
+        setProjects(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'No se pudieron cargar los proyectos')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProjects()
   }, [])
 
   const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
@@ -40,24 +53,28 @@ export default function ClienteDashboard() {
           <h1 className="text-2xl font-bold text-cobalt">Mis proyectos</h1>
           <p className="text-sm text-gray-500 mt-1">Seguimiento en tiempo real</p>
         </div>
-        <a href="/cliente/nuevo" className="bg-coral text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-coral-dark transition-colors">
+        <Link href="/cliente/nuevo" className="bg-coral text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-coral-dark transition-colors">
           + Nuevo pedido
-        </a>
+        </Link>
       </div>
 
       {loading ? (
         <div className="text-gray-400 text-sm">Cargando proyectos...</div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-red-600 text-sm">
+          {error}
+        </div>
       ) : projects.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
           <p className="text-gray-400 mb-4">Aún no tienes proyectos</p>
-          <a href="/cliente/nuevo" className="text-coral text-sm font-medium hover:underline">
+          <Link href="/cliente/nuevo" className="text-coral text-sm font-medium hover:underline">
             Solicita tu primer servicio →
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="space-y-3">
           {projects.map(p => (
-            <a key={p._id} href={`/cliente/${p._id}`} className="block bg-white rounded-xl border border-gray-100 p-5 hover:border-cobalt/20 transition-colors">
+            <Link key={p._id} href={`/cliente/${p._id}`} className="block bg-white rounded-xl border border-gray-100 p-5 hover:border-cobalt/20 transition-colors">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="font-semibold text-cobalt mb-1">{p.title}</div>
@@ -77,7 +94,7 @@ export default function ClienteDashboard() {
                 <span>Revisiones: {p.revisions.used}/{p.revisions.max}</span>
                 {p.designer && <span>Diseñador: {typeof p.designer === 'object' ? p.designer.name : '—'}</span>}
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}

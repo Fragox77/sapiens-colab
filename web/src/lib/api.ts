@@ -82,4 +82,24 @@ export const servicesApi = {
 export const quotesApi = {
   create: (data: { serviceType: string; complexity: string; urgency: string }) =>
     api.post<import('@/types').QuoteResult>('/api/quotes', data),
+  calculateV1: (data: {
+    serviceType: string
+    complexity: string
+    urgency: string
+    lead?: { name?: string; email?: string; company?: string }
+  }) => api.post<import('@/types').QuoteResult & { quoteRequestId: string; leadCaptured: boolean }>('/api/v1/quotes/calculate', data),
+  catalogV1: () => api.get<{
+    services: Array<{ id: string; name: string; base: number; tag: string }>
+    complexities: string[]
+    urgencies: string[]
+  }>('/api/v1/quotes/catalog'),
+}
+
+export const billingApi = {
+  plans: () => api.get<{ items: Array<{ plan: string; monthlyFee: number; commissionRate: number; seats: number; maxActiveProjects: number }> }>('/api/v1/billing/plans'),
+  overview: () => api.get<{ tenantId: string; plan: string; commissionRate: number; seats: number; maxActiveProjects: number; monthlyFee: number; model: string }>('/api/v1/billing/overview'),
+  preview: (data: { plan: string; monthlyProjects: number; avgTicket: number }) =>
+    api.post<{ plan: string; monthlyFee: number; commissionRate: number; commissionRevenue: number; projectedMRR: number }>('/api/v1/billing/preview', data),
+  changePlan: (plan: 'basic' | 'pro' | 'enterprise') =>
+    api.patch<{ tenantId: string; plan: string; commissionRate: number; seats: number; maxActiveProjects: number }>('/api/v1/billing/plan', { plan }),
 }

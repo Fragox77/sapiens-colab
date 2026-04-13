@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { servicesApi, projectsApi } from '@/lib/api'
+import { quotesApi, projectsApi } from '@/lib/api'
 import type { ServiceType, Complexity, Urgency, QuoteResult } from '@/types'
 
-// ─── Datos de servicios (mirror del cotizador.js para UI) ─────────────────
-const SERVICES: { id: ServiceType; name: string; tag: string; base: number; icon: string }[] = [
+// ─── Datos de servicios fallback (si falla catalogo v1) ───────────────────
+const SERVICES_FALLBACK: { id: ServiceType; name: string; tag: string; base: number; icon: string }[] = [
   { id: 'branding',     name: 'Identidad de marca',       tag: 'Branding',      base: 850000,  icon: '✦' },
   { id: 'piezas',       name: 'Piezas y materiales',      tag: 'Diseño gráfico', base: 320000,  icon: '◈' },
   { id: 'video-motion', name: 'Reels y animaciones',      tag: 'Video & Motion', base: 480000,  icon: '▶' },
@@ -36,6 +37,7 @@ export default function NuevoPedidoPage() {
   const router = useRouter()
 
   const [step, setStep]             = useState<Step>(1)
+  const [services, setServices]     = useState(SERVICES_FALLBACK)
   const [service, setService]       = useState<ServiceType | null>(null)
   const [complexity, setComplexity] = useState<Complexity>('media')
   const [urgency, setUrgency]       = useState<Urgency>('normal')
@@ -44,15 +46,44 @@ export default function NuevoPedidoPage() {
   const [format, setFormat]         = useState('')
   const [quote, setQuote]           = useState<QuoteResult | null>(null)
   const [loadingQuote, setLoadingQuote] = useState(false)
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState('')
+
+  useEffect(() => {
+    async function loadCatalog() {
+      try {
+        const catalog = await quotesApi.catalogV1()
+        const merged = catalog.services
+          .map((item) => {
+            const fallback = SERVICES_FALLBACK.find((f) => f.id === item.id)
+            if (!fallback) return null
+            return {
+              ...fallback,
+              name: item.name,
+              tag: item.tag,
+              base: item.base,
+            }
+          })
+          .filter((item): item is typeof SERVICES_FALLBACK[number] => Boolean(item))
+
+        if (merged.length > 0) {
+          setServices(merged)
+        }
+      } finally {
+        setLoadingCatalog(false)
+      }
+    }
+
+    loadCatalog()
+  }, [])
 
   // Recalcula cotización cuando cambia servicio, complejidad o urgencia
   const fetchQuote = useCallback(async () => {
     if (!service) return
     setLoadingQuote(true)
     try {
-      const result = await servicesApi.quote({ serviceType: service, complexity, urgency })
+      const result = await quotesApi.calculateV1({ serviceType: service, complexity, urgency })
       setQuote(result)
     } catch {
       /* silencioso — la API ya valida */
@@ -90,9 +121,9 @@ export default function NuevoPedidoPage() {
     <div className="max-w-2xl mx-auto">
       {/* Header + progreso */}
       <div className="mb-8">
-        <a href="/cliente" className="text-xs text-white/30 hover:text-coral transition-colors mb-4 inline-block">
+        <Link href="/cliente" className="text-xs text-white/30 hover:text-coral transition-colors mb-4 inline-block">
           ← Mis proyectos
-        </a>
+        </Link>
         <h1 className="text-2xl font-bold text-cobalt">Solicitar servicio</h1>
         <div className="flex gap-2 mt-4">
           {([1, 2, 3] as Step[]).map(s => (
@@ -115,8 +146,9 @@ export default function NuevoPedidoPage() {
       {step === 1 && (
         <div>
           <p className="text-sm text-gray-500 mb-5">¿Qué necesitas?</p>
+          {loadingCatalog && <p className="text-xs text-gray-400 mb-4">Actualizando catálogo...</p>}
           <div className="grid gap-3">
-            {SERVICES.map(s => (
+            {services.map(s => (
               <button
                 key={s.id}
                 onClick={() => setService(s.id)}
@@ -311,7 +343,7 @@ export default function NuevoPedidoPage() {
             <div className="p-4">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Servicio</div>
               <div className="font-semibold text-cobalt">
-                {SERVICES.find(s => s.id === service)?.name}
+                {services.find(s => s.id === service)?.name}
               </div>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">

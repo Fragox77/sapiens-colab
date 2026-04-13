@@ -55,7 +55,7 @@ export default function CotizarPage() {
     setError('')
 
     try {
-      const result = await quotesApi.create({ serviceType, complexity, urgency })
+      const result = await quotesApi.calculateV1({ serviceType, complexity, urgency })
       setQuote(result)
     } catch (err) {
       setQuote(null)

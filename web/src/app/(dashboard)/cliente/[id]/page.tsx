@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { projectsApi } from '@/lib/api'
 import type { Project } from '@/types'
 
@@ -28,7 +29,6 @@ const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
 
 export default function ProyectoDetallePage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading]  = useState(true)
   const [error, setError]      = useState('')
@@ -81,9 +81,9 @@ export default function ProyectoDetallePage() {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <a href="/cliente" className="text-xs text-gray-400 hover:text-coral transition-colors mb-3 inline-block">
+        <Link href="/cliente" className="text-xs text-gray-400 hover:text-coral transition-colors mb-3 inline-block">
           ← Mis proyectos
-        </a>
+        </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-cobalt">{p.title}</h1>

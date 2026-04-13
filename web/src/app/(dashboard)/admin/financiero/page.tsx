@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { adminApi } from '@/lib/api'
+import { adminApi, billingApi } from '@/lib/api'
 import type { FinancieroReport, FinancieroProject } from '@/types'
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
@@ -18,6 +18,9 @@ const fmt = (n: number) =>
   `$${Math.round(n).toLocaleString('es-CO')}`
 
 type Tab = 'pagos' | 'liquidaciones' | 'ingresos'
+type BillingPlan = 'basic' | 'pro' | 'enterprise'
+
+const DEFAULT_PLANS: BillingPlan[] = ['basic', 'pro', 'enterprise']
 
 export default function FinancieroAdminPage() {
   const [data, setData]         = useState<FinancieroReport | null>(null)
@@ -27,6 +30,14 @@ export default function FinancieroAdminPage() {
   const [filterStatus, setFilterStatus] = useState('todos')
   const [filterPago, setFilterPago]     = useState('todos')
   const [error, setError]       = useState('')
+  const [previewPlan, setPreviewPlan] = useState<BillingPlan>('pro')
+  const [activePlan, setActivePlan] = useState<BillingPlan | null>(null)
+  const [planOptions, setPlanOptions] = useState<BillingPlan[]>(DEFAULT_PLANS)
+  const [previewProjects, setPreviewProjects] = useState(12)
+  const [previewTicket, setPreviewTicket] = useState(1800000)
+  const [previewResult, setPreviewResult] = useState<{ commissionRevenue: number; projectedMRR: number; monthlyFee: number } | null>(null)
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
   async function load() {
     try {
@@ -39,6 +50,58 @@ export default function FinancieroAdminPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    async function loadOverviewPlan() {
+      try {
+        const overview = await billingApi.overview()
+        if (DEFAULT_PLANS.includes(overview.plan as BillingPlan)) {
+          const tenantPlan = overview.plan as BillingPlan
+          setActivePlan(tenantPlan)
+          setPreviewPlan(tenantPlan)
+        }
+      } catch {
+        // Mantiene el valor por defecto si no hay overview disponible.
+      }
+    }
+
+    async function loadPlans() {
+      try {
+        const { items } = await billingApi.plans()
+        const options = items
+          .map(item => item.plan)
+          .filter((plan): plan is BillingPlan => DEFAULT_PLANS.includes(plan as BillingPlan))
+
+        if (options.length > 0) {
+          setPlanOptions(options)
+          if (!options.includes(previewPlan)) {
+            setPreviewPlan(options[0])
+          }
+        }
+      } catch {
+        setPlanOptions(DEFAULT_PLANS)
+      }
+    }
+
+    loadOverviewPlan()
+    loadPlans()
+  }, [])
+
+  useEffect(() => {
+    async function runPreview() {
+      try {
+        const result = await billingApi.preview({
+          plan: previewPlan,
+          monthlyProjects: previewProjects,
+          avgTicket: previewTicket,
+        })
+        setPreviewResult(result)
+      } catch {
+        setPreviewResult(null)
+      }
+    }
+    runPreview()
+  }, [previewPlan, previewProjects, previewTicket])
 
   async function marcarAnticipo(projectId: string) {
     setProcessing(projectId)
@@ -62,6 +125,22 @@ export default function FinancieroAdminPage() {
       alert(err instanceof Error ? err.message : 'Error')
     } finally {
       setProcessing(null)
+    }
+  }
+
+  async function guardarPlan() {
+    setSavingPlan(true)
+    setSaveMessage('')
+
+    try {
+      await billingApi.changePlan(previewPlan)
+      setActivePlan(previewPlan)
+      await load()
+      setSaveMessage('Plan guardado correctamente.')
+    } catch (err) {
+      setSaveMessage(err instanceof Error ? err.message : 'No se pudo guardar el plan.')
+    } finally {
+      setSavingPlan(false)
     }
   }
 
@@ -95,6 +174,55 @@ export default function FinancieroAdminPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-cobalt">Finanzas</h1>
         <p className="text-sm text-gray-400 mt-1">Panel financiero completo de SAPIENS COLAB</p>
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-xs text-gray-500">Plan activo:</span>
+          <span className="inline-flex items-center rounded-full bg-cobalt/10 text-cobalt px-2.5 py-1 text-xs font-semibold">
+            {(activePlan || previewPlan).charAt(0).toUpperCase() + (activePlan || previewPlan).slice(1)}
+          </span>
+          {activePlan && activePlan !== previewPlan && (
+            <span className="text-xs text-orange-600">Tienes cambios sin guardar</span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="text-xs text-gray-500">
+            Plan
+            <select value={previewPlan} onChange={e => setPreviewPlan(e.target.value as BillingPlan)} className="ml-2 border border-gray-200 rounded-md px-2 py-1 text-sm">
+              {planOptions.map(plan => (
+                <option key={plan} value={plan}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-gray-500">
+            Proyectos/mes
+            <input type="number" min={0} value={previewProjects} onChange={e => setPreviewProjects(Number(e.target.value || 0))} className="ml-2 w-24 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+          </label>
+          <label className="text-xs text-gray-500">
+            Ticket promedio
+            <input type="number" min={0} value={previewTicket} onChange={e => setPreviewTicket(Number(e.target.value || 0))} className="ml-2 w-32 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+          </label>
+          <button
+            onClick={guardarPlan}
+            disabled={savingPlan}
+            className="h-8 px-3 rounded-md bg-cobalt text-white text-xs font-semibold hover:opacity-90 disabled:opacity-60"
+          >
+            {savingPlan ? 'Guardando...' : 'Guardar plan'}
+          </button>
+        </div>
+        {saveMessage && (
+          <p className={`mt-2 text-xs ${saveMessage.includes('correctamente') ? 'text-emerald-600' : 'text-red-500'}`}>
+            {saveMessage}
+          </p>
+        )}
+        {previewResult && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-500 text-xs">Fee mensual</span><div className="font-bold text-cobalt">{fmt(previewResult.monthlyFee)}</div></div>
+            <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-500 text-xs">Comisión estimada</span><div className="font-bold text-coral">{fmt(previewResult.commissionRevenue)}</div></div>
+            <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-500 text-xs">MRR proyectado</span><div className="font-bold text-cobalt">{fmt(previewResult.projectedMRR)}</div></div>
+          </div>
+        )}
       </div>
 
       {/* ── KPIs ─────────────────────────────────────────────── */}
