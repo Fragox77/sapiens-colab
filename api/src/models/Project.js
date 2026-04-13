@@ -106,5 +106,9 @@ projectSchema.pre('save', function syncAnalyticsFields(next) {
 projectSchema.index({ status: 1, createdAt: -1 });
 projectSchema.index({ assignedTo: 1, completedAt: -1 });
 projectSchema.index({ clientId: 1, createdAt: -1 });
+projectSchema.index({ status: 1, completedAt: -1 });
+projectSchema.index({ status: 1, 'payments.balance.paid': 1, designer: 1 });
+projectSchema.index({ status: 1, 'payments.anticipo.paid': 1 });
+projectSchema.index({ status: 1, deadlineAt: 1, completedAt: 1 });
 
 module.exports = mongoose.model('Project', projectSchema);

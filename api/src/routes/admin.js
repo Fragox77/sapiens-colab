@@ -108,21 +108,59 @@ router.get('/designers', async (_req, res) => {
 // GET /api/admin/dashboard
 router.get('/dashboard', async (_req, res) => {
   try {
-    const [total, activos, completados, cotizados] = await Promise.all([
-      Project.countDocuments(),
-      Project.countDocuments({ status: 'activo' }),
-      Project.countDocuments({ status: 'completado' }),
-      Project.countDocuments({ status: 'cotizado' }),
+    const [stats] = await Project.aggregate([
+      {
+        $facet: {
+          counts: [
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                activos: { $sum: { $cond: [{ $eq: ['$status', 'activo'] }, 1, 0] } },
+                completados: { $sum: { $cond: [{ $eq: ['$status', 'completado'] }, 1, 0] } },
+                cotizados: { $sum: { $cond: [{ $eq: ['$status', 'cotizado'] }, 1, 0] } },
+              },
+            },
+          ],
+          finanzas: [
+            { $match: { status: 'completado' } },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: '$pricing.total' },
+                utilidad: {
+                  $sum: {
+                    $subtract: [
+                      '$pricing.total',
+                      { $add: ['$pricing.designerPay', { $multiply: ['$pricing.total', 0.19] }] },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
     ]);
 
-    const ingresos = await Project.aggregate([
-      { $match: { status: 'completado' } },
-      { $group: { _id: null, total: { $sum: '$pricing.total' }, utilidad: { $sum: { $subtract: ['$pricing.total', { $add: ['$pricing.designerPay', { $multiply: ['$pricing.total', 0.19] }] }] } } } },
-    ]);
+    const counts = (stats && stats.counts && stats.counts[0]) || {
+      total: 0,
+      activos: 0,
+      completados: 0,
+      cotizados: 0,
+    };
+
+    const rawIngresos = (stats && stats.finanzas && stats.finanzas[0]) || { total: 0, utilidad: 0 };
+    const ingresos = { total: rawIngresos.total || 0, utilidad: rawIngresos.utilidad || 0 };
 
     res.json({
-      projects: { total, activos, completados, cotizados },
-      finanzas: ingresos[0] || { total: 0, utilidad: 0 },
+      projects: {
+        total: counts.total,
+        activos: counts.activos,
+        completados: counts.completados,
+        cotizados: counts.cotizados,
+      },
+      finanzas: ingresos,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -171,83 +209,195 @@ router.patch('/projects/:id/anticipo', async (req, res) => {
 // GET /api/admin/financiero — Reporte financiero completo
 router.get('/financiero', async (_req, res) => {
   try {
-    const projects = await Project.find({ status: { $ne: 'cancelado' } })
-      .populate('client',   'name company')
-      .populate('designer', 'name level specialty')
-      .sort('-createdAt');
-
-    // ─── KPIs globales ────────────────────────────────────────
-    const completados  = projects.filter(p => p.status === 'completado');
-    const activos      = projects.filter(p => !['completado', 'cancelado', 'cotizado'].includes(p.status));
-    const cotizados    = projects.filter(p => p.status === 'cotizado');
-
-    const totalFacturado  = completados.reduce((a, p) => a + p.pricing.total, 0);
-    const comisionSapiens = completados.reduce((a, p) => a + p.pricing.commission, 0);
-    const pagadoDisenadores = completados.reduce((a, p) => a + p.pricing.designerPay, 0);
-
-    // Pipeline activo (lo que está en producción, por cobrar)
-    const pipelineTotal   = activos.reduce((a, p) => a + p.pricing.total, 0);
-    const pipelineBalance = activos
-      .filter(p => !p.payments.balance.paid)
-      .reduce((a, p) => a + p.pricing.balance, 0);
-
-    // Anticipos pendientes de recibir
-    const anticiposPendientes = projects
-      .filter(p => !p.payments.anticipo.paid && p.status !== 'cotizado')
-      .reduce((a, p) => a + p.pricing.anticipo, 0);
-
-    // Balances pendientes de cobrar (proyectos aprobados)
-    const balancesPendientes = projects
-      .filter(p => p.status === 'aprobado' && !p.payments.balance.paid)
-      .reduce((a, p) => a + p.pricing.balance, 0);
-
-    // ─── Deuda por diseñador (proyectos completados sin liquidar) ─
-    const deudaMap = {};
-    completados
-      .filter(p => p.designer && !p.payments.balance.paid)
-      .forEach(p => {
-        const id = String(p.designer._id || p.designer);
-        if (!deudaMap[id]) deudaMap[id] = { designer: p.designer, proyectos: [], totalDeuda: 0 };
-        deudaMap[id].proyectos.push({ id: p._id, title: p.title, pay: p.pricing.designerPay });
-        deudaMap[id].totalDeuda += p.pricing.designerPay;
-      });
-
-    // ─── Ingresos por mes (últimos 6 meses) ───────────────────
-    const porMes = await Project.aggregate([
-      { $match: { status: 'completado', completedAt: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) } } },
-      { $group: {
-        _id:     { year: { $year: '$completedAt' }, month: { $month: '$completedAt' } },
-        ingresos: { $sum: '$pricing.total' },
-        utilidad: { $sum: '$pricing.commission' },
-        proyectos: { $sum: 1 },
-      }},
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    const [summary] = await Project.aggregate([
+      { $match: { status: { $ne: 'cancelado' } } },
+      {
+        $facet: {
+          kpis: [
+            {
+              $group: {
+                _id: null,
+                totalProyectos: { $sum: 1 },
+                proyectosActivos: {
+                  $sum: {
+                    $cond: [{ $in: ['$status', ['activo', 'revision', 'ajuste', 'aprobado']] }, 1, 0],
+                  },
+                },
+                totalFacturado: {
+                  $sum: { $cond: [{ $eq: ['$status', 'completado'] }, '$pricing.total', 0] },
+                },
+                comisionSapiens: {
+                  $sum: { $cond: [{ $eq: ['$status', 'completado'] }, '$pricing.commission', 0] },
+                },
+                pagadoDisenadores: {
+                  $sum: { $cond: [{ $eq: ['$status', 'completado'] }, '$pricing.designerPay', 0] },
+                },
+                pipelineTotal: {
+                  $sum: {
+                    $cond: [{ $in: ['$status', ['activo', 'revision', 'ajuste', 'aprobado']] }, '$pricing.total', 0],
+                  },
+                },
+                anticiposPendientes: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$payments.anticipo.paid', false] },
+                          { $ne: ['$status', 'cotizado'] },
+                        ],
+                      },
+                      '$pricing.anticipo',
+                      0,
+                    ],
+                  },
+                },
+                balancesPendientes: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$status', 'aprobado'] },
+                          { $eq: ['$payments.balance.paid', false] },
+                        ],
+                      },
+                      '$pricing.balance',
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          deudaDisenadores: [
+            {
+              $match: {
+                status: 'completado',
+                designer: { $ne: null },
+                'payments.balance.paid': false,
+              },
+            },
+            {
+              $group: {
+                _id: '$designer',
+                proyectos: {
+                  $push: { id: '$_id', title: '$title', pay: '$pricing.designerPay' },
+                },
+                totalDeuda: { $sum: '$pricing.designerPay' },
+              },
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'designer',
+              },
+            },
+            { $unwind: '$designer' },
+            {
+              $project: {
+                _id: 0,
+                designer: {
+                  _id: '$designer._id',
+                  name: '$designer.name',
+                  level: '$designer.level',
+                  specialty: '$designer.specialty',
+                },
+                proyectos: 1,
+                totalDeuda: 1,
+              },
+            },
+          ],
+          ingresosPorMes: [
+            {
+              $match: {
+                status: 'completado',
+                completedAt: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
+              },
+            },
+            {
+              $group: {
+                _id: { year: { $year: '$completedAt' }, month: { $month: '$completedAt' } },
+                ingresos: { $sum: '$pricing.total' },
+                utilidad: { $sum: '$pricing.commission' },
+                proyectos: { $sum: 1 },
+              },
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1 } },
+          ],
+        },
+      },
     ]);
 
-    res.json({
-      kpis: {
-        totalFacturado,
-        comisionSapiens,
-        pagadoDisenadores,
-        pipelineTotal,
-        anticiposPendientes,
-        balancesPendientes,
-        totalProyectos: projects.length,
-        proyectosActivos: activos.length,
+    const projects = await Project.aggregate([
+      { $match: { status: { $ne: 'cancelado' } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'client',
+          foreignField: '_id',
+          as: 'client',
+          pipeline: [{ $project: { name: 1, company: 1 } }],
+        },
       },
-      proyectos: projects.map(p => ({
-        _id:    p._id,
-        title:  p.title,
-        status: p.status,
-        client:   p.client,
-        designer: p.designer,
-        pricing:  p.pricing,
-        payments: p.payments,
-        createdAt:   p.createdAt,
-        completedAt: p.completedAt,
-      })),
-      deudaDisenadores: Object.values(deudaMap),
-      ingresosPorMes: porMes,
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'designer',
+          foreignField: '_id',
+          as: 'designer',
+          pipeline: [{ $project: { name: 1, level: 1, specialty: 1 } }],
+        },
+      },
+      {
+        $addFields: {
+          client: { $arrayElemAt: ['$client', 0] },
+          designer: { $arrayElemAt: ['$designer', 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          status: 1,
+          client: 1,
+          designer: 1,
+          pricing: 1,
+          payments: 1,
+          createdAt: 1,
+          completedAt: 1,
+        },
+      },
+    ]);
+
+    const rawKpis = (summary && summary.kpis && summary.kpis[0]) || {
+      totalFacturado: 0,
+      comisionSapiens: 0,
+      pagadoDisenadores: 0,
+      pipelineTotal: 0,
+      anticiposPendientes: 0,
+      balancesPendientes: 0,
+      totalProyectos: 0,
+      proyectosActivos: 0,
+    };
+
+    const kpis = {
+      totalFacturado: rawKpis.totalFacturado || 0,
+      comisionSapiens: rawKpis.comisionSapiens || 0,
+      pagadoDisenadores: rawKpis.pagadoDisenadores || 0,
+      pipelineTotal: rawKpis.pipelineTotal || 0,
+      anticiposPendientes: rawKpis.anticiposPendientes || 0,
+      balancesPendientes: rawKpis.balancesPendientes || 0,
+      totalProyectos: rawKpis.totalProyectos || 0,
+      proyectosActivos: rawKpis.proyectosActivos || 0,
+    };
+
+    res.json({
+      kpis,
+      proyectos: projects,
+      deudaDisenadores: (summary && summary.deudaDisenadores) || [],
+      ingresosPorMes: (summary && summary.ingresosPorMes) || [],
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

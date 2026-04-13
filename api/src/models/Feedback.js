@@ -11,5 +11,6 @@ const feedbackSchema = new mongoose.Schema({
 
 feedbackSchema.index({ project: 1, client: 1 }, { unique: true });
 feedbackSchema.index({ createdAt: -1 });
+feedbackSchema.index({ createdAt: -1, designer: 1 });
 
 module.exports = mongoose.model('Feedback', feedbackSchema);
