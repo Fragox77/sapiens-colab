@@ -61,7 +61,7 @@ export default function RegistroPage() {
                 type={f.type} required={f.required}
                 value={form[f.key as keyof typeof form]}
                 onChange={set(f.key)}
-                className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm"
+                className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#162032_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
                 placeholder={f.placeholder}
               />
             </div>

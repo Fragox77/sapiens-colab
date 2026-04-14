@@ -52,7 +52,7 @@ export default function LoginPage() {
             <input
               type="email" required value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm"
+              className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#162032_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
               placeholder="tu@email.com"
             />
           </div>
@@ -61,7 +61,7 @@ export default function LoginPage() {
             <input
               type="password" required value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm"
+              className="w-full bg-slate-900/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/50 text-sm [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#162032_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
               placeholder="••••••••"
             />
           </div>
