@@ -6,7 +6,7 @@ router.use('/auth',     require('../../../routes/auth'));
 router.use('/projects', require('../../../routes/projects'));
 router.use('/quotes',   require('../../../routes/quotes'));
 router.use('/users',    require('../../../routes/users'));
-router.use('/billing',  require('./routes/billing'));
+router.use('/billing',  require('../../../routes/billing'));
 router.use('/tenants',  require('./routes/tenants'));
 router.use('/leads',    require('./routes/leads'));
 

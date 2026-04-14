@@ -13,6 +13,7 @@ CREATE TABLE users (
   email VARCHAR(255) NOT NULL,
   name VARCHAR(180) NOT NULL,
   role VARCHAR(20) NOT NULL,
+  password_hash TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE (tenant_id, email)
 );

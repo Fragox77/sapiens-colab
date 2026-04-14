@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { InMemoryEventBus } from "@sapiens/shared";
 import { db } from "../config/database";
+import { env } from "../config/env";
 
 // ── Repositories ────────────────────────────────────────────────────────────
 import { TenantRepositoryPg } from "../../../../modules/tenant/infrastructure/TenantRepositoryPg";
@@ -8,12 +9,16 @@ import { ConversationRepositoryPg } from "../../../../modules/conversation/infra
 import { MessageRepositoryPg } from "../../../../modules/message/infrastructure/MessageRepositoryPg";
 import { WorkflowRepositoryPg } from "../../../../modules/workflow/infrastructure/WorkflowRepositoryPg";
 import { AuditRepositoryPg } from "../../../../modules/audit/infrastructure/AuditRepositoryPg";
+import { UserRepositoryPg } from "../../../../modules/user/infrastructure/UserRepositoryPg";
+import { AuthSessionRepositoryPg } from "../../../../modules/auth/infrastructure/AuthSessionRepositoryPg";
 
 // ── Services ─────────────────────────────────────────────────────────────────
 import { TenantService } from "../../../../modules/tenant/application/TenantService";
 import { ConversationService } from "../../../../modules/conversation/application/ConversationService";
 import { MessageService } from "../../../../modules/message/application/MessageService";
 import { WorkflowService } from "../../../../modules/workflow/application/WorkflowService";
+import { UserService } from "../../../../modules/user/application/UserService";
+import { AuthService } from "../../../../modules/auth/application/AuthService";
 
 // ── Gateways ─────────────────────────────────────────────────────────────────
 import { OpenClawHttpGateway } from "../../../../modules/message/infrastructure/OpenClawHttpGateway";
@@ -25,6 +30,10 @@ import { ConversationController } from "../../../../modules/conversation/interfa
 import { buildConversationRoutes } from "../../../../modules/conversation/interfaces/conversation.routes";
 import { MessageController } from "../../../../modules/message/interfaces/message.controller";
 import { WorkflowController } from "../../../../modules/workflow/interfaces/workflow.controller";
+import { UserController } from "../../../../modules/user/interfaces/user.controller";
+import { buildUserRoutes } from "../../../../modules/user/interfaces/user.routes";
+import { AuthController } from "../../../../modules/auth/interfaces/auth.controller";
+import { buildAuthRoutes } from "../../../../modules/auth/interfaces/auth.routes";
 
 // ── Composition root ─────────────────────────────────────────────────────────
 const eventBus = new InMemoryEventBus();
@@ -33,17 +42,31 @@ const tenantRepo       = new TenantRepositoryPg(db);
 const conversationRepo = new ConversationRepositoryPg(db);
 const messageRepo      = new MessageRepositoryPg(db);
 const workflowRepo     = new WorkflowRepositoryPg(db);
+const userRepo         = new UserRepositoryPg(db);
+const authSessionRepo  = new AuthSessionRepositoryPg(db);
 new AuditRepositoryPg(db); // disponible para uso futuro
 
 const tenantService       = new TenantService(tenantRepo);
 const conversationService = new ConversationService(conversationRepo, eventBus);
 const messageService      = new MessageService(messageRepo, eventBus, new OpenClawHttpGateway());
 const workflowService     = new WorkflowService(workflowRepo, eventBus);
+const userService         = new UserService(userRepo);
+const authService         = new AuthService(
+  userRepo,
+  authSessionRepo,
+  {
+    jwtSecret:       env.jwt.secret,
+    accessTokenTtl:  env.jwt.accessTokenTtl,
+    refreshTokenTtl: env.jwt.refreshTokenTtl,
+  },
+);
 
 const tenantController       = new TenantController(tenantService);
 const conversationController = new ConversationController(conversationService);
 const messageController      = new MessageController(messageService);
 const workflowController     = new WorkflowController(workflowService);
+const userController         = new UserController(userService);
+const authController         = new AuthController(authService);
 
 // ── Router ────────────────────────────────────────────────────────────────────
 export const router = Router();
@@ -52,7 +75,9 @@ router.get("/health", (req, res) => {
   res.json({ ok: true, tenantId: req.headers["x-tenant-id"], service: "openclaw-backend" });
 });
 
+router.use("/auth",          buildAuthRoutes(authController));
 router.use("/tenants",       buildTenantRoutes(tenantController));
+router.use("/users",         buildUserRoutes(userController));
 router.use("/conversations", buildConversationRoutes(conversationController));
 
 // Message route inline (no hay buildMessageRoutes aún)
