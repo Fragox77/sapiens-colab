@@ -101,7 +101,7 @@ export default function CotizarPage() {
             Cotiza tu proyecto
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            Captura tus datos y selecciona servicio, complejidad y urgencia. Tu lead quedara registrado y se creara un proyecto en estado Cotizado automaticamente.
+            Captura tus datos y selecciona servicio, complejidad y urgencia. Tu lead quedara registrado en el CRM para gestion comercial.
           </p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5">
@@ -194,7 +194,7 @@ export default function CotizarPage() {
               disabled={loading}
               className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Generando cotizacion...' : 'Enviar y generar proyecto'}
+              {loading ? 'Generando cotizacion...' : 'Enviar al pipeline CRM'}
             </button>
 
             {error && (
@@ -240,8 +240,9 @@ export default function CotizarPage() {
               <ResultRow label="IVA" value={formatMoney(quote.pricing.iva)} />
               <ResultRow label="Utilidad" value={formatMoney(quote.pricing.commission)} />
               <ResultRow label="Lead score" value={`${quote.leadScore}/100`} />
-              <ResultRow label="Estado proyecto" value={quote.project.status} />
-              <ResultRow label="Proyecto" value={quote.project.title} />
+              <ResultRow label="Etapa CRM" value={quote.stage || 'NUEVO'} />
+              <ResultRow label="Estado" value={quote.project ? quote.project.status : 'Sin proyecto'} />
+              <ResultRow label="Referencia" value={quote.project ? quote.project.title : `Lead ${quote.quoteId}`} />
             </div>
           )}
         </motion.aside>

@@ -82,6 +82,16 @@ export const quotesApi = {
   }) => api.post<import('@/types').QuoteCreationResponse>('/api/quotes', data),
   list: () => api.get<{ success: boolean; data: import('@/types').Quote[] }>('/api/quotes'),
   get: (id: string) => api.get<{ success: boolean; data: import('@/types').Quote }>(`/api/quotes/${id}`),
+  updateStage: (id: string, stage: import('@/types').LeadStage) =>
+    api.patch<{ success: boolean; message: string; data: import('@/types').Quote }>(`/api/quotes/${id}/stage`, { stage }),
+  addNote: (id: string, message: string) =>
+    api.post<{ success: boolean; message: string; data: import('@/types').Quote }>(`/api/quotes/${id}/notes`, { message }),
+  crmKpis: () => api.get<{ success: boolean; data: import('@/types').CrmKpis }>('/api/quotes/crm/kpis'),
+  timeline: (id: string) => api.get<{ success: boolean; data: import('@/types').CrmTimeline }>(`/api/quotes/${id}/timeline`),
+  addTask: (id: string, payload: { title: string; dueAt?: string }) =>
+    api.post<{ success: boolean; message: string; data: import('@/types').CrmTimeline }>(`/api/quotes/${id}/tasks`, payload),
+  updateTask: (id: string, taskId: string, status: 'pendiente' | 'completada') =>
+    api.patch<{ success: boolean; message: string; data: import('@/types').CrmTimeline }>(`/api/quotes/${id}/tasks/${taskId}`, { status }),
   calculateV1: (data: {
     serviceType: string
     complexity: string

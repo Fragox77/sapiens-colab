@@ -23,6 +23,13 @@ export type ServiceType =
 
 export type Complexity = 'basica' | 'media' | 'avanzada'
 export type Urgency    = 'normal' | 'prioritario' | 'express'
+export type LeadStage =
+  | 'NUEVO'
+  | 'CONTACTO_INICIAL'
+  | 'PROPUESTA_ENVIADA'
+  | 'NEGOCIACION'
+  | 'CERRADO_GANADO'
+  | 'CERRADO_PERDIDO'
 
 export type ProjectStatus =
   | 'cotizado' | 'activo' | 'revision'
@@ -93,8 +100,9 @@ export interface QuoteCreationResponse {
   message: string
   data: {
     quoteId: string
-    projectId: string
+    projectId: string | null
     leadStatus: 'nuevo' | 'contactado' | 'calificado' | 'convertido' | 'descartado'
+    stage?: LeadStage
     leadScore: number
     pricing: Pricing
     project: {
@@ -105,7 +113,7 @@ export interface QuoteCreationResponse {
       complexity: Complexity
       urgency: Urgency
       createdAt: string
-    }
+    } | null
   }
 }
 
@@ -121,8 +129,38 @@ export interface Quote {
   urgency: Urgency
   pricing: Pricing
   leadStatus: 'nuevo' | 'contactado' | 'calificado' | 'convertido' | 'descartado'
+  stage?: LeadStage
   leadScore: number
   source?: string
+  crm?: {
+    owner?: string
+    tags?: string[]
+    nextActionAt?: string | null
+    activities?: Array<{
+      _id?: string
+      type: string
+      message: string
+      byId?: string | null
+      byName?: string
+      at: string
+    }>
+    tasks?: Array<{
+      _id: string
+      title: string
+      status: 'pendiente' | 'completada'
+      dueAt?: string | null
+      ownerId?: string | null
+      ownerName?: string
+      createdAt?: string
+      completedAt?: string | null
+    }>
+    notes?: Array<{
+      message: string
+      authorId?: string
+      authorName?: string
+      at: string
+    }>
+  }
   createdAt: string
   updatedAt?: string
   project?: {
@@ -134,6 +172,44 @@ export interface Quote {
     urgency?: Urgency
     createdAt?: string
   }
+}
+
+export interface CrmKpis {
+  totalLeads: number
+  wonLeads: number
+  conversionRate: number
+  pipelineValue: number
+  leadsByStage: Record<LeadStage, number>
+}
+
+export interface CrmTimeline {
+  quoteId: string
+  stage?: LeadStage
+  leadStatus: 'nuevo' | 'contactado' | 'calificado' | 'convertido' | 'descartado'
+  activities: Array<{
+    _id?: string
+    type: string
+    message: string
+    byId?: string | null
+    byName?: string
+    at: string
+  }>
+  notes: Array<{
+    message: string
+    authorId?: string
+    authorName?: string
+    at: string
+  }>
+  tasks: Array<{
+    _id: string
+    title: string
+    status: 'pendiente' | 'completada'
+    dueAt?: string | null
+    ownerId?: string | null
+    ownerName?: string
+    createdAt?: string
+    completedAt?: string | null
+  }>
 }
 
 export interface ApplicationScores {

@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const LEAD_STAGES = ['NUEVO', 'CONTACTO_INICIAL', 'PROPUESTA_ENVIADA', 'NEGOCIACION', 'CERRADO_GANADO', 'CERRADO_PERDIDO'];
+
 const quoteSchema = new mongoose.Schema(
   {
     client: {
@@ -34,11 +36,17 @@ const quoteSchema = new mongoose.Schema(
       commission: { type: Number, required: true },
       designerPay: { type: Number, required: true },
     },
-    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: false, index: true },
     leadStatus: {
       type: String,
       enum: ['nuevo', 'contactado', 'calificado', 'convertido', 'descartado'],
-      default: 'convertido',
+      default: 'nuevo',
+      index: true,
+    },
+    stage: {
+      type: String,
+      enum: LEAD_STAGES,
+      default: 'NUEVO',
       index: true,
     },
     leadScore: { type: Number, default: 0 },
@@ -46,7 +54,23 @@ const quoteSchema = new mongoose.Schema(
     crm: {
       owner: { type: String, default: 'pendiente' },
       tags: [{ type: String }],
-      notes: [{ message: String, at: { type: Date, default: Date.now } }],
+      notes: [{ message: String, authorId: String, authorName: String, at: { type: Date, default: Date.now } }],
+      activities: [{
+        type: { type: String, default: 'ACTIVITY' },
+        message: { type: String, required: true },
+        byId: { type: String, default: null },
+        byName: { type: String, default: 'Sistema' },
+        at: { type: Date, default: Date.now },
+      }],
+      tasks: [{
+        title: { type: String, required: true, trim: true },
+        status: { type: String, enum: ['pendiente', 'completada'], default: 'pendiente' },
+        dueAt: { type: Date, default: null },
+        ownerId: { type: String, default: null },
+        ownerName: { type: String, default: 'Sin asignar' },
+        createdAt: { type: Date, default: Date.now },
+        completedAt: { type: Date, default: null },
+      }],
       nextActionAt: { type: Date, default: null },
     },
   },

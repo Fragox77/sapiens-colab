@@ -13,6 +13,7 @@ const navByRole: Record<Role, Array<{ href: string; label: string }>> = {
   ],
   admin: [
     { href: '/admin', label: 'Dashboard' },
+    { href: '/dashboard/crm', label: 'CRM Leads' },
     { href: '/admin/proyectos', label: 'Proyectos' },
     { href: '/admin/financiero', label: 'Finanzas' },
     { href: '/admin/postulaciones', label: 'Postulaciones' },
