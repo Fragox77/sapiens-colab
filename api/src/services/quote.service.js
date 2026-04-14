@@ -9,6 +9,14 @@ const VALID_SERVICE_TYPES = ['branding', 'piezas', 'video-motion', 'fotografia',
 const VALID_COMPLEXITIES = ['basica', 'media', 'avanzada'];
 const VALID_URGENCIES = ['normal', 'prioritario', 'express'];
 const VALID_STAGES = ['NUEVO', 'CONTACTO_INICIAL', 'PROPUESTA_ENVIADA', 'NEGOCIACION', 'CERRADO_GANADO', 'CERRADO_PERDIDO'];
+const SLA_HOURS_BY_STAGE = {
+  NUEVO: 24,
+  CONTACTO_INICIAL: 48,
+  PROPUESTA_ENVIADA: 72,
+  NEGOCIACION: 72,
+  CERRADO_GANADO: null,
+  CERRADO_PERDIDO: null,
+};
 
 function ensureString(value) {
   return String(value || '').trim();
@@ -436,8 +444,10 @@ async function updateQuoteTaskForUser(user, quoteId, taskId, status) {
 async function getCrmKpisForUser(user) {
   const { filter } = await getUserScope(user);
   const quotes = await Quote.find(filter)
-    .select('stage pricing.total createdAt')
+    .select('stage pricing.total createdAt updatedAt client.name crm.tasks')
     .lean();
+
+  const now = Date.now();
 
   const totalLeads = quotes.length;
   const wonLeads = quotes.filter((q) => q.stage === 'CERRADO_GANADO').length;
@@ -452,12 +462,90 @@ async function getCrmKpisForUser(user) {
     return acc;
   }, {});
 
+  const pendingTasks = quotes.reduce((acc, q) => {
+    const tasks = (q.crm?.tasks || []).filter((task) => task.status === 'pendiente');
+    return acc + tasks.length;
+  }, 0);
+
+  const overdueTasks = quotes.reduce((acc, q) => {
+    const tasks = (q.crm?.tasks || []).filter((task) => {
+      if (task.status !== 'pendiente' || !task.dueAt) return false;
+      return new Date(task.dueAt).getTime() < now;
+    });
+    return acc + tasks.length;
+  }, 0);
+
+  const completedTasksWithDueDate = quotes.flatMap((q) => (q.crm?.tasks || []).filter((task) => task.status === 'completada' && task.dueAt && task.completedAt));
+  const completedOnTime = completedTasksWithDueDate.filter((task) => new Date(task.completedAt).getTime() <= new Date(task.dueAt).getTime()).length;
+  const slaComplianceRate = completedTasksWithDueDate.length > 0
+    ? Number(((completedOnTime / completedTasksWithDueDate.length) * 100).toFixed(2))
+    : 100;
+
+  const activeQuotes = quotes.filter((q) => !['CERRADO_GANADO', 'CERRADO_PERDIDO'].includes(q.stage || 'NUEVO'));
+  const stalledLeads = activeQuotes.filter((q) => {
+    const stage = q.stage || 'NUEVO';
+    const slaHours = SLA_HOURS_BY_STAGE[stage];
+    if (!slaHours) return false;
+    const ageHours = (now - new Date(q.updatedAt || q.createdAt).getTime()) / (1000 * 60 * 60);
+    return ageHours > slaHours;
+  }).length;
+
+  const agingByStage = VALID_STAGES.reduce((acc, stage) => {
+    const stageQuotes = quotes.filter((q) => (q.stage || 'NUEVO') === stage);
+    if (stageQuotes.length === 0) {
+      acc[stage] = { count: 0, avgDays: 0, maxDays: 0 };
+      return acc;
+    }
+
+    const agesInDays = stageQuotes.map((q) => {
+      const base = new Date(q.updatedAt || q.createdAt).getTime();
+      return Math.max(0, (now - base) / (1000 * 60 * 60 * 24));
+    });
+
+    const avgDays = Number((agesInDays.reduce((sum, value) => sum + value, 0) / agesInDays.length).toFixed(2));
+    const maxDays = Number(Math.max(...agesInDays).toFixed(2));
+
+    acc[stage] = { count: stageQuotes.length, avgDays, maxDays };
+    return acc;
+  }, {});
+
+  const alerts = activeQuotes
+    .map((q) => {
+      const stage = q.stage || 'NUEVO';
+      const slaHours = SLA_HOURS_BY_STAGE[stage];
+      const ageHours = (now - new Date(q.updatedAt || q.createdAt).getTime()) / (1000 * 60 * 60);
+      const overdue = (q.crm?.tasks || []).filter((task) => task.status === 'pendiente' && task.dueAt && new Date(task.dueAt).getTime() < now).length;
+      const severity = overdue > 0 ? 'high' : (slaHours && ageHours > slaHours ? 'medium' : 'low');
+
+      return {
+        quoteId: String(q._id),
+        leadName: q.client?.name || 'Lead',
+        stage,
+        ageHours: Number(ageHours.toFixed(1)),
+        overdueTasks: overdue,
+        severity,
+      };
+    })
+    .filter((item) => item.severity !== 'low')
+    .sort((a, b) => {
+      const severityScore = { high: 3, medium: 2, low: 1 };
+      const diff = severityScore[b.severity] - severityScore[a.severity];
+      return diff !== 0 ? diff : b.ageHours - a.ageHours;
+    })
+    .slice(0, 8);
+
   return {
     totalLeads,
     wonLeads,
     conversionRate,
     pipelineValue,
     leadsByStage,
+    pendingTasks,
+    overdueTasks,
+    stalledLeads,
+    slaComplianceRate,
+    agingByStage,
+    alerts,
   };
 }
 

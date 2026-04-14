@@ -180,6 +180,19 @@ export interface CrmKpis {
   conversionRate: number
   pipelineValue: number
   leadsByStage: Record<LeadStage, number>
+  pendingTasks: number
+  overdueTasks: number
+  stalledLeads: number
+  slaComplianceRate: number
+  agingByStage: Record<LeadStage, { count: number; avgDays: number; maxDays: number }>
+  alerts: Array<{
+    quoteId: string
+    leadName: string
+    stage: LeadStage
+    ageHours: number
+    overdueTasks: number
+    severity: 'high' | 'medium' | 'low'
+  }>
 }
 
 export interface CrmTimeline {

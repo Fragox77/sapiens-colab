@@ -18,6 +18,10 @@ const EMPTY_KPIS: CrmKpis = {
   wonLeads: 0,
   conversionRate: 0,
   pipelineValue: 0,
+  pendingTasks: 0,
+  overdueTasks: 0,
+  stalledLeads: 0,
+  slaComplianceRate: 100,
   leadsByStage: {
     NUEVO: 0,
     CONTACTO_INICIAL: 0,
@@ -26,6 +30,15 @@ const EMPTY_KPIS: CrmKpis = {
     CERRADO_GANADO: 0,
     CERRADO_PERDIDO: 0,
   },
+  agingByStage: {
+    NUEVO: { count: 0, avgDays: 0, maxDays: 0 },
+    CONTACTO_INICIAL: { count: 0, avgDays: 0, maxDays: 0 },
+    PROPUESTA_ENVIADA: { count: 0, avgDays: 0, maxDays: 0 },
+    NEGOCIACION: { count: 0, avgDays: 0, maxDays: 0 },
+    CERRADO_GANADO: { count: 0, avgDays: 0, maxDays: 0 },
+    CERRADO_PERDIDO: { count: 0, avgDays: 0, maxDays: 0 },
+  },
+  alerts: [],
 }
 
 export default function CrmPage() {
@@ -201,7 +214,7 @@ export default function CrmPage() {
         </div>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-5">
         <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Tasa de conversion</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.conversionRate}%</p>
@@ -216,6 +229,60 @@ export default function CrmPage() {
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Leads activos</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.totalLeads}</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Lectura en tiempo real del pipeline</p>
+        </article>
+        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+          <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Tareas vencidas</p>
+          <p className="mt-2 text-3xl font-semibold text-rose-300">{kpis.overdueTasks}</p>
+          <p className="theme-dashboard-muted mt-1 text-xs">Pendientes: {kpis.pendingTasks}</p>
+        </article>
+        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+          <p className="theme-dashboard-muted text-xs uppercase tracking-wide">SLA comercial</p>
+          <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.slaComplianceRate}%</p>
+          <p className="theme-dashboard-muted mt-1 text-xs">Leads estancados: {kpis.stalledLeads}</p>
+        </article>
+      </section>
+
+      <section className="grid gap-3 lg:grid-cols-2">
+        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="theme-dashboard-text text-sm font-semibold">Alertas comerciales</p>
+            <span className="text-xs text-slate-400">Top {kpis.alerts.length}</span>
+          </div>
+          <div className="space-y-2">
+            {kpis.alerts.length === 0 && <p className="text-xs text-slate-400">Sin alertas criticas por ahora.</p>}
+            {kpis.alerts.map((alert) => (
+              <div key={alert.quoteId} className="rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="theme-dashboard-text font-medium">{alert.leadName}</span>
+                  <span className={[
+                    'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                    alert.severity === 'high' ? 'bg-rose-500/20 text-rose-200' : 'bg-amber-500/20 text-amber-200',
+                  ].join(' ')}>
+                    {alert.severity}
+                  </span>
+                </div>
+                <p className="mt-1 text-slate-300">{alert.stage} · {alert.ageHours}h · {alert.overdueTasks} tareas vencidas</p>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="theme-dashboard-text text-sm font-semibold">Aging por etapa</p>
+            <span className="text-xs text-slate-400">Promedio en dias</span>
+          </div>
+          <div className="space-y-2">
+            {STAGES.map((stage) => (
+              <div key={stage.id} className="rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="theme-dashboard-text">{stage.label}</span>
+                  <span className="text-slate-300">{kpis.agingByStage[stage.id]?.avgDays || 0} d</span>
+                </div>
+                <p className="mt-1 text-slate-400">{kpis.agingByStage[stage.id]?.count || 0} leads · max {kpis.agingByStage[stage.id]?.maxDays || 0} d</p>
+              </div>
+            ))}
+          </div>
         </article>
       </section>
 
@@ -246,6 +313,7 @@ export default function CrmPage() {
                   const activities = quote.crm?.activities || []
                   const tasks = quote.crm?.tasks || []
                   const openTasks = tasks.filter((task) => task.status === 'pendiente')
+                  const overdueTasks = openTasks.filter((task) => task.dueAt && new Date(task.dueAt).getTime() < Date.now())
 
                   return (
                     <article
@@ -279,7 +347,7 @@ export default function CrmPage() {
                         Creado: {new Date(quote.createdAt).toLocaleDateString('es-CO')}
                       </div>
                       <div className="mt-1 text-[11px] text-slate-300/80">
-                        Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length}
+                        Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length} · Vencidas: {overdueTasks.length}
                       </div>
                       {hasProject && (
                         <div className="mt-1 text-[11px] text-emerald-200">Proyecto vinculado: {quote.project?.title}</div>
