@@ -1,14 +1,14 @@
 const router = require('express').Router();
-const { tenantContext } = require('../../../shared/security/tenant-context.middleware');
+const { tenantContext } = require('./middleware/tenant-context');
 
 router.use(tenantContext);
-router.use('/auth', require('../../../modules/auth/api/auth.routes'));
-router.use('/billing', require('../../../modules/billing/api/billing.routes'));
-router.use('/projects', require('../../../modules/projects/api/projects.routes'));
-router.use('/quotes', require('../../../modules/quotes/api/quotes.routes'));
-router.use('/users', require('../../../modules/users/api/users.routes'));
-router.use('/tenants', require('../../../modules/tenants/api/tenants.routes'));
-router.use('/leads', require('../../../modules/leads/api/leads.routes'));
+router.use('/auth',     require('../../../routes/auth'));
+router.use('/projects', require('../../../routes/projects'));
+router.use('/quotes',   require('../../../routes/quotes'));
+router.use('/users',    require('../../../routes/users'));
+router.use('/billing',  require('./routes/billing'));
+router.use('/tenants',  require('./routes/tenants'));
+router.use('/leads',    require('./routes/leads'));
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', apiVersion: 'v1' });
