@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const Quote = require('../models/Quote');
 const Project = require('../models/Project');
 const User = require('../models/User');
@@ -144,4 +145,47 @@ async function createQuoteAndProject(payload) {
   };
 }
 
-module.exports = { createQuoteAndProject };
+async function getQuotesForUser(user) {
+  if (!user || !user.id) throw new Error('Usuario no autenticado');
+
+  const dbUser = await User.findById(user.id).select('email role');
+  if (!dbUser) throw new Error('Usuario no encontrado');
+
+  const filter = dbUser.role === 'admin' ? {} : { 'client.email': dbUser.email };
+
+  const quotes = await Quote.find(filter)
+    .select('client serviceType complexity urgency pricing leadStatus leadScore source project createdAt')
+    .populate('project', 'title status createdAt')
+    .sort({ createdAt: -1 })
+    .limit(50);
+
+  return quotes;
+}
+
+async function getQuoteByIdForUser(user, quoteId) {
+  if (!mongoose.Types.ObjectId.isValid(quoteId)) {
+    throw new Error('La cotizacion no existe');
+  }
+
+  if (!user || !user.id) throw new Error('Usuario no autenticado');
+
+  const dbUser = await User.findById(user.id).select('email role');
+  if (!dbUser) throw new Error('Usuario no encontrado');
+
+  const filter = { _id: quoteId };
+  if (dbUser.role !== 'admin') {
+    filter['client.email'] = dbUser.email;
+  }
+
+  const quote = await Quote.findOne(filter)
+    .select('client serviceType complexity urgency pricing leadStatus leadScore source crm project createdAt updatedAt')
+    .populate('project', 'title status serviceType complexity urgency createdAt');
+
+  if (!quote) {
+    throw new Error('La cotizacion no existe o no tienes acceso');
+  }
+
+  return quote;
+}
+
+module.exports = { createQuoteAndProject, getQuoteByIdForUser, getQuotesForUser };

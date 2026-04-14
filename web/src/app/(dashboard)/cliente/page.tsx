@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { projectsApi } from '@/lib/api'
-import type { Project } from '@/types'
+import { projectsApi, quotesApi } from '@/lib/api'
+import type { Project, Quote } from '@/types'
 
 const STATUS_LABEL: Record<string, string> = {
   cotizado: 'Esperando anticipo',
@@ -26,8 +26,11 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function ClienteDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
+  const [quotes, setQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
+  const [quotesLoading, setQuotesLoading] = useState(true)
   const [error, setError] = useState('')
+  const [quotesError, setQuotesError] = useState('')
 
   useEffect(() => {
     async function loadProjects() {
@@ -44,6 +47,21 @@ export default function ClienteDashboard() {
     loadProjects()
   }, [])
 
+  useEffect(() => {
+    async function loadQuotes() {
+      try {
+        const response = await quotesApi.list()
+        setQuotes(response.data)
+      } catch (err) {
+        setQuotesError(err instanceof Error ? err.message : 'No se pudieron cargar las cotizaciones')
+      } finally {
+        setQuotesLoading(false)
+      }
+    }
+
+    loadQuotes()
+  }, [])
+
   const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
 
   return (
@@ -53,10 +71,63 @@ export default function ClienteDashboard() {
           <h1 className="text-2xl font-bold text-cobalt">Mis proyectos</h1>
           <p className="text-sm text-gray-500 mt-1">Seguimiento en tiempo real</p>
         </div>
-        <Link href="/cliente/nuevo" className="bg-coral text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-coral-dark transition-colors">
-          + Nuevo pedido
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/cotizar" className="border border-cobalt/20 text-cobalt px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-cobalt/5 transition-colors">
+            Cotizar servicio
+          </Link>
+          <Link href="/cliente/nuevo" className="bg-coral text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-coral-dark transition-colors">
+            + Nuevo pedido
+          </Link>
+        </div>
       </div>
+
+      <section className="bg-white rounded-xl border border-gray-100 p-5 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-cobalt">Mis cotizaciones</h2>
+          <span className="text-xs text-gray-400">Ultimas 50</span>
+        </div>
+
+        {quotesLoading ? (
+          <div className="text-gray-400 text-sm">Cargando cotizaciones...</div>
+        ) : quotesError ? (
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-red-600 text-sm">
+            {quotesError}
+          </div>
+        ) : quotes.length === 0 ? (
+          <p className="text-sm text-gray-500">Aun no tienes cotizaciones registradas.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-gray-100">
+                  <th className="py-2 pr-4 font-medium">Fecha</th>
+                  <th className="py-2 pr-4 font-medium">Servicio</th>
+                  <th className="py-2 pr-4 font-medium">Total</th>
+                  <th className="py-2 pr-4 font-medium">Lead score</th>
+                  <th className="py-2 pr-4 font-medium">Proyecto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quotes.map((q) => (
+                  <tr key={q._id} className="border-b border-gray-50 last:border-0">
+                    <td className="py-3 pr-4 text-gray-600">{new Date(q.createdAt).toLocaleDateString('es-CO')}</td>
+                    <td className="py-3 pr-4 text-gray-700">{q.serviceType}</td>
+                    <td className="py-3 pr-4 font-semibold text-cobalt">{fmt(q.pricing.total)}</td>
+                    <td className="py-3 pr-4 text-gray-700">{q.leadScore}/100</td>
+                    <td className="py-3 pr-4 text-gray-700">
+                      {q.project?._id ? (
+                        <Link href={`/cliente/${q.project._id}`} className="text-cobalt hover:underline">
+                          {q.project.title || 'Ver proyecto'}
+                        </Link>
+                      ) : 'Sin proyecto'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {loading ? (
         <div className="text-gray-400 text-sm">Cargando proyectos...</div>

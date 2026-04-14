@@ -80,6 +80,8 @@ export const quotesApi = {
     complexity: string
     urgency: string
   }) => api.post<import('@/types').QuoteCreationResponse>('/api/quotes', data),
+  list: () => api.get<{ success: boolean; data: import('@/types').Quote[] }>('/api/quotes'),
+  get: (id: string) => api.get<{ success: boolean; data: import('@/types').Quote }>(`/api/quotes/${id}`),
   calculateV1: (data: {
     serviceType: string
     complexity: string

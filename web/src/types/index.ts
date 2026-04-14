@@ -109,6 +109,33 @@ export interface QuoteCreationResponse {
   }
 }
 
+export interface Quote {
+  _id: string
+  client: {
+    name: string
+    email: string
+    company?: string
+  }
+  serviceType: ServiceType
+  complexity: Complexity
+  urgency: Urgency
+  pricing: Pricing
+  leadStatus: 'nuevo' | 'contactado' | 'calificado' | 'convertido' | 'descartado'
+  leadScore: number
+  source?: string
+  createdAt: string
+  updatedAt?: string
+  project?: {
+    _id: string
+    title: string
+    status: ProjectStatus
+    serviceType?: ServiceType
+    complexity?: Complexity
+    urgency?: Urgency
+    createdAt?: string
+  }
+}
+
 export interface ApplicationScores {
   experiencia?: number
   portafolio?:  number
