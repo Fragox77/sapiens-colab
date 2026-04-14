@@ -46,7 +46,10 @@ const allowedOrigins = new Set([...defaultOrigins, ...envOrigins]);
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    // Permitir cualquier subdominio de vercel.app y onrender.com
+    if (/\.vercel\.app$/.test(origin) || /\.onrender\.com$/.test(origin)) {
       return callback(null, true);
     }
     return callback(new Error(`Origen no permitido por CORS: ${origin}`));
