@@ -234,7 +234,7 @@ export default function DisenadorProyectoPage() {
                 <div>
                   <div className="text-xs font-medium text-cobalt">{t.action.replace(/_/g, ' ')}</div>
                   {t.message && <div className="text-xs text-gray-400 mt-0.5">{t.message}</div>}
-                  <div className="text-xs text-gray-300 mt-0.5">
+                  <div className="theme-dashboard-muted text-xs mt-0.5">
                     {new Date(t.createdAt).toLocaleString('es-CO')}
                   </div>
                 </div>

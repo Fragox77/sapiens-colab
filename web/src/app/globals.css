@@ -20,8 +20,15 @@
   --dashboard-border: #dbe3f5;
   --dashboard-text: #111827;
   --dashboard-muted: #64748b;
-  --dashboard-accent: #4c58ff;
-  --dashboard-card-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
+  --dashboard-accent: #4338ca;
+  --dashboard-card-shadow: 0 14px 40px rgba(15, 23, 42, 0.10);
+
+  /* Chart tokens */
+  --chart-bar-bg: #e2e8f0;
+  --chart-ring-bg: #e2e8f0;
+  --chart-line-revenue: #3b82f6;
+  --chart-line-cost: #ec4899;
+  --chart-grid: #94a3b8;
 }
 
 html[data-theme='dark'] {
@@ -35,6 +42,13 @@ html[data-theme='dark'] {
   --dashboard-muted: #94a3b8;
   --dashboard-accent: #4c58ff;
   --dashboard-card-shadow: 0 18px 45px rgba(2, 6, 23, 0.52);
+
+  /* Chart tokens */
+  --chart-bar-bg: #27324E;
+  --chart-ring-bg: #334155;
+  --chart-line-revenue: #22D3EE;
+  --chart-line-cost: #F472B6;
+  --chart-grid: #64748B;
 }
 
 html { scroll-behavior: smooth; }
@@ -108,16 +122,74 @@ h1, h2, h3, h4 {
   color: #fff;
 }
 
-/* Fix autofill Chrome — fondo oscuro + texto blanco */
+/* Nav item hover — adapts to light/dark */
+.nav-hover:hover {
+  background: var(--dashboard-surface-2);
+}
+
+/* ── Semantic badge colors ─────────────────────────────────────────────────
+   Usage: add `badge-{color} border` to the badge span alongside structural
+   Tailwind classes (rounded-full px-2.5 py-1 text-xs font-medium).
+   Light = solid pastel bg + dark text. Dark = translucent bg + light text.
+   ──────────────────────────────────────────────────────────────────────── */
+.badge-yellow  { background: #fef9c3; color: #713f12; border-color: #fde68a; }
+.badge-blue    { background: #dbeafe; color: #1e3a8a; border-color: #bfdbfe; }
+.badge-violet  { background: #ede9fe; color: #4c1d95; border-color: #ddd6fe; }
+.badge-orange  { background: #ffedd5; color: #7c2d12; border-color: #fed7aa; }
+.badge-emerald { background: #d1fae5; color: #064e3b; border-color: #a7f3d0; }
+.badge-slate   { background: #f1f5f9; color: #1e293b; border-color: #e2e8f0; }
+.badge-rose    { background: #ffe4e6; color: #881337; border-color: #fecdd3; }
+
+html[data-theme='dark'] .badge-yellow  { background: rgba(234,179,8,0.15);   color: #fde047; border-color: rgba(234,179,8,0.35); }
+html[data-theme='dark'] .badge-blue    { background: rgba(59,130,246,0.15);  color: #93c5fd; border-color: rgba(59,130,246,0.35); }
+html[data-theme='dark'] .badge-violet  { background: rgba(139,92,246,0.15);  color: #c4b5fd; border-color: rgba(139,92,246,0.35); }
+html[data-theme='dark'] .badge-orange  { background: rgba(249,115,22,0.15);  color: #fdba74; border-color: rgba(249,115,22,0.35); }
+html[data-theme='dark'] .badge-emerald { background: rgba(16,185,129,0.15);  color: #6ee7b7; border-color: rgba(16,185,129,0.35); }
+html[data-theme='dark'] .badge-slate   { background: rgba(100,116,139,0.20); color: #cbd5e1; border-color: rgba(100,116,139,0.35); }
+html[data-theme='dark'] .badge-rose    { background: rgba(244,63,94,0.15);   color: #fda4af; border-color: rgba(244,63,94,0.35); }
+
+/* ── Semantic text colors ──────────────────────────────────────────────────
+   For financial values, alerts and indicators — adapt to light/dark.
+   ──────────────────────────────────────────────────────────────────────── */
+.text-semantic-success { color: #16a34a; }
+.text-semantic-danger  { color: #dc2626; }
+.text-semantic-warning { color: #b45309; }
+.text-semantic-violet  { color: #7c3aed; }
+.text-semantic-blue    { color: #2563eb; }
+
+html[data-theme='dark'] .text-semantic-success { color: #4ade80; }
+html[data-theme='dark'] .text-semantic-danger  { color: #f87171; }
+html[data-theme='dark'] .text-semantic-warning { color: #fbbf24; }
+html[data-theme='dark'] .text-semantic-violet  { color: #c4b5fd; }
+html[data-theme='dark'] .text-semantic-blue    { color: #93c5fd; }
+
+/* ── Semantic action buttons ───────────────────────────────────────────────
+   Payment/action buttons in tables — adapt to light/dark.
+   ──────────────────────────────────────────────────────────────────────── */
+.btn-action-yellow  { border: 1px solid rgba(234,179,8,0.4);   background: rgba(234,179,8,0.1);   color: #854d0e; }
+.btn-action-yellow:hover  { background: rgba(234,179,8,0.2); }
+.btn-action-emerald { border: 1px solid rgba(16,185,129,0.4);  background: rgba(16,185,129,0.1);  color: #065f46; }
+.btn-action-emerald:hover { background: rgba(16,185,129,0.2); }
+.btn-action-rose    { border: 1px solid rgba(244,63,94,0.4);   background: rgba(244,63,94,0.1);   color: #881337; }
+.btn-action-rose:hover    { background: rgba(244,63,94,0.2); }
+
+html[data-theme='dark'] .btn-action-yellow  { color: #fde047; border-color: rgba(234,179,8,0.35);   background: rgba(234,179,8,0.15); }
+html[data-theme='dark'] .btn-action-yellow:hover  { background: rgba(234,179,8,0.25); }
+html[data-theme='dark'] .btn-action-emerald { color: #6ee7b7; border-color: rgba(16,185,129,0.35);  background: rgba(16,185,129,0.15); }
+html[data-theme='dark'] .btn-action-emerald:hover { background: rgba(16,185,129,0.25); }
+html[data-theme='dark'] .btn-action-rose    { color: #fda4af; border-color: rgba(244,63,94,0.35);   background: rgba(244,63,94,0.15); }
+html[data-theme='dark'] .btn-action-rose:hover    { background: rgba(244,63,94,0.25); }
+
+/* Fix autofill Chrome — usa tokens del tema */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: white;
-  -webkit-box-shadow: 0 0 0 1000px #2d2870 inset;
-  caret-color: white;
+  -webkit-text-fill-color: var(--dashboard-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--dashboard-surface) inset;
+  caret-color: var(--dashboard-text);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(30,27,75,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--dashboard-border); border-radius: 3px; }

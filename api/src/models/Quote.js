@@ -5,9 +5,10 @@ const LEAD_STAGES = ['NUEVO', 'CONTACTO_INICIAL', 'PROPUESTA_ENVIADA', 'NEGOCIAC
 const quoteSchema = new mongoose.Schema(
   {
     client: {
-      name: { type: String, required: true, trim: true },
-      email: { type: String, required: true, trim: true, lowercase: true, index: true },
+      name:    { type: String, required: true, trim: true },
+      email:   { type: String, required: true, trim: true, lowercase: true, index: true },
       company: { type: String, default: '', trim: true },
+      phone:   { type: String, default: '', trim: true },
     },
     serviceType: {
       type: String,

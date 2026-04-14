@@ -252,7 +252,7 @@ export function TemplateOverviewChart({
                     className="group relative flex-1"
                     onMouseEnter={() => setActiveIndex(idx)}
                   >
-                    <div className="relative mx-auto h-40 w-full max-w-[22px] rounded-md bg-[#27324E]">
+                    <div className="relative mx-auto h-40 w-full max-w-[22px] rounded-md bg-[var(--chart-bar-bg)]">
                       {showSeries.barrasIngresos && (
                         <div
                           className="absolute bottom-0 w-full rounded-md bg-gradient-to-t from-[#3B47F6] to-[#7C8BFF] transition-all duration-700"
@@ -431,7 +431,7 @@ export function TemplateRadialBreakdown({ data }: { data: StatusMetricPoint[] })
                 const dash = circumference * pct
                 return (
                   <g key={item.status} transform="rotate(-90 110 110)">
-                    <circle cx="110" cy="110" r={radius} fill="none" stroke="#334155" strokeWidth="8" opacity="0.65" />
+                    <circle cx="110" cy="110" r={radius} fill="none" stroke="var(--chart-ring-bg)" strokeWidth="8" opacity="0.65" />
                     <circle
                       cx="110"
                       cy="110"
@@ -513,7 +513,7 @@ export function TemplateWeeklyChart({ data }: { data: WeeklyMetricPoint[] }) {
             const h = Math.max((item.revenue / maxRevenue) * 100, 8)
             return (
               <div key={item.label} className="min-w-[56px] text-center">
-                <div className="mx-auto h-28 w-7 rounded-md bg-[#27324E] flex items-end">
+                <div className="mx-auto h-28 w-7 rounded-md bg-[var(--chart-bar-bg)] flex items-end">
                   <div className="w-full rounded-md bg-gradient-to-t from-[#4C58FF] to-[#7DD3FC]" style={{ height: `${h}%` }} />
                 </div>
                 <p className="theme-dashboard-muted mt-2 text-[10px]">{item.label}</p>

@@ -14,13 +14,13 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  cotizado:   'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30',
-  activo:     'bg-blue-500/15 text-blue-300 border border-blue-500/30',
-  revision:   'bg-violet-500/15 text-violet-300 border border-violet-500/30',
-  ajuste:     'bg-orange-500/15 text-orange-300 border border-orange-500/30',
-  aprobado:   'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
-  completado: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
-  cancelado:  'bg-rose-500/15 text-rose-300 border border-rose-500/30',
+  cotizado:   'badge-yellow border',
+  activo:     'badge-blue border',
+  revision:   'badge-violet border',
+  ajuste:     'badge-orange border',
+  aprobado:   'badge-emerald border',
+  completado: 'badge-slate border',
+  cancelado:  'badge-rose border',
 }
 
 const FILTERS: { value: string; label: string }[] = [

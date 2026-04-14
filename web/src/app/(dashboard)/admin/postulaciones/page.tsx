@@ -5,12 +5,12 @@ import { adminApi } from '@/lib/api'
 import type { Application } from '@/types'
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  'recibida':      { label: 'Recibida',       color: 'bg-slate-500/20 text-slate-300 border border-slate-500/30' },
-  'en-evaluacion': { label: 'En evaluacion',  color: 'bg-blue-500/15 text-blue-300 border border-blue-500/30' },
-  'prueba-enviada':{ label: 'Prueba enviada', color: 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30' },
-  'evaluada':      { label: 'Evaluada',       color: 'bg-violet-500/15 text-violet-300 border border-violet-500/30' },
-  'aceptada':      { label: 'Aceptada',       color: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' },
-  'rechazada':     { label: 'Rechazada',      color: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' },
+  'recibida':      { label: 'Recibida',       color: 'badge-slate border' },
+  'en-evaluacion': { label: 'En evaluacion',  color: 'badge-blue border' },
+  'prueba-enviada':{ label: 'Prueba enviada', color: 'badge-yellow border' },
+  'evaluada':      { label: 'Evaluada',       color: 'badge-violet border' },
+  'aceptada':      { label: 'Aceptada',       color: 'badge-emerald border' },
+  'rechazada':     { label: 'Rechazada',      color: 'badge-rose border' },
 }
 
 const FILTER_OPTIONS = ['todas', 'recibida', 'en-evaluacion', 'prueba-enviada', 'evaluada', 'aceptada', 'rechazada']
@@ -62,7 +62,7 @@ export default function PostulacionesPage() {
       ) : (
         <div className="space-y-3">
           {visible.map(app => {
-            const meta = STATUS_META[app.status] ?? { label: app.status, color: 'bg-slate-500/20 text-slate-300 border border-slate-500/30' }
+            const meta = STATUS_META[app.status] ?? { label: app.status, color: 'badge-slate border' }
             return (
               <div
                 key={app._id}

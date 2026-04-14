@@ -221,7 +221,7 @@ export default function FinancieroAdminPage() {
             {isPlanSynced ? 'Sincronizado' : 'Desactualizado'}
           </span>
           {activePlan && activePlan !== previewPlan && (
-            <span className="text-xs text-orange-300">Tienes cambios sin guardar</span>
+            <span className="text-xs text-semantic-warning">Tienes cambios sin guardar</span>
           )}
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -268,7 +268,7 @@ export default function FinancieroAdminPage() {
         {previewResult && (
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div className="theme-dashboard-surface-2 rounded-lg p-3"><span className="theme-dashboard-muted text-xs">Tarifa mensual</span><div className="theme-dashboard-text font-bold">{fmt(previewResult.monthlyFee)}</div></div>
-            <div className="theme-dashboard-surface-2 rounded-lg p-3"><span className="theme-dashboard-muted text-xs">Comisión estimada</span><div className="font-bold text-rose-300">{fmt(previewResult.commissionRevenue)}</div></div>
+            <div className="theme-dashboard-surface-2 rounded-lg p-3"><span className="theme-dashboard-muted text-xs">Comisión estimada</span><div className="font-bold text-semantic-danger">{fmt(previewResult.commissionRevenue)}</div></div>
             <div className="theme-dashboard-surface-2 rounded-lg p-3"><span className="theme-dashboard-muted text-xs">Ingresos mensuales proyectados</span><div className="theme-dashboard-text font-bold">{fmt(previewResult.projectedMRR)}</div></div>
           </div>
         )}
@@ -393,7 +393,7 @@ export default function FinancieroAdminPage() {
                   </div>
                   <div className="text-right">
                     <div className="theme-dashboard-muted text-xs">Total a liquidar</div>
-                    <div className="text-xl font-black text-rose-300">{fmt(d.totalDeuda)}</div>
+                    <div className="text-xl font-black text-semantic-danger">{fmt(d.totalDeuda)}</div>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -462,7 +462,7 @@ export default function FinancieroAdminPage() {
                     <tr key={i}>
                       <td className="theme-dashboard-text py-2">{MESES[m._id.month - 1]} {m._id.year}</td>
                       <td className="theme-dashboard-text py-2 text-right font-semibold">{fmt(m.ingresos)}</td>
-                      <td className="py-2 text-right text-rose-300">{fmt(m.utilidad)}</td>
+                      <td className="py-2 text-right text-semantic-danger">{fmt(m.utilidad)}</td>
                       <td className="theme-dashboard-muted py-2 text-right">{m.proyectos}</td>
                     </tr>
                   ))}
@@ -483,11 +483,11 @@ function Kpi({ label, value, accent, sub }: {
 }) {
   const colors: Record<string, string> = {
     cobalt: 'theme-dashboard-text',
-    coral:  'text-rose-300',
-    yellow: 'text-yellow-300',
-    purple: 'text-violet-300',
-    blue:   'text-blue-300',
-    green:  'text-emerald-300',
+    coral:  'text-semantic-danger',
+    yellow: 'text-semantic-warning',
+    purple: 'text-semantic-violet',
+    blue:   'text-semantic-blue',
+    green:  'text-semantic-success',
     gray:   'theme-dashboard-muted',
   }
   return (
@@ -522,12 +522,12 @@ function PagoRow({ project: p, processing, onAnticipo, onComplete }: {
       </td>
       <td className="px-4 py-3 text-center">
         {p.payments.anticipo.paid ? (
-          <span className="text-xs font-medium text-emerald-300">✓ {fmt(p.pricing.anticipo)}</span>
+          <span className="text-xs font-medium text-semantic-success">✓ {fmt(p.pricing.anticipo)}</span>
         ) : (
           <button
             onClick={() => onAnticipo(p._id)}
             disabled={busy}
-            className="whitespace-nowrap rounded-lg border border-yellow-500/30 bg-yellow-500/15 px-2.5 py-1 text-xs text-yellow-300 transition-colors hover:bg-yellow-500/25 disabled:opacity-50"
+            className="btn-action-yellow whitespace-nowrap rounded-lg px-2.5 py-1 text-xs transition-colors disabled:opacity-50"
           >
             {busy ? '...' : `Recibir ${fmt(p.pricing.anticipo)}`}
           </button>
@@ -535,12 +535,12 @@ function PagoRow({ project: p, processing, onAnticipo, onComplete }: {
       </td>
       <td className="px-4 py-3 text-center">
         {p.payments.balance.paid ? (
-          <span className="text-xs font-medium text-emerald-300">✓ {fmt(p.pricing.balance)}</span>
+          <span className="text-xs font-medium text-semantic-success">✓ {fmt(p.pricing.balance)}</span>
         ) : p.status === 'aprobado' ? (
           <button
             onClick={() => onComplete(p._id)}
             disabled={busy}
-            className="whitespace-nowrap rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-300 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
+            className="btn-action-emerald whitespace-nowrap rounded-lg px-2.5 py-1 text-xs transition-colors disabled:opacity-50"
           >
             {busy ? '...' : `Cerrar ${fmt(p.pricing.balance)}`}
           </button>

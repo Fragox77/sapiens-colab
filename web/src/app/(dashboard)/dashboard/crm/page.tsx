@@ -5,12 +5,12 @@ import { quotesApi } from '@/lib/api'
 import type { CrmKpis, CrmTimeline, LeadStage, Quote } from '@/types'
 
 const STAGES: Array<{ id: LeadStage; label: string; hint: string; accent: string }> = [
-  { id: 'NUEVO', label: 'Nuevo', hint: 'Lead recien capturado', accent: 'from-cyan-500/25 to-cyan-400/5' },
-  { id: 'CONTACTO_INICIAL', label: 'Contacto inicial', hint: 'Primera conversacion activa', accent: 'from-blue-500/25 to-blue-400/5' },
-  { id: 'PROPUESTA_ENVIADA', label: 'Propuesta enviada', hint: 'Oferta economica entregada', accent: 'from-violet-500/25 to-violet-400/5' },
-  { id: 'NEGOCIACION', label: 'Negociacion', hint: 'Ajuste de alcance y condiciones', accent: 'from-amber-500/25 to-amber-400/5' },
-  { id: 'CERRADO_GANADO', label: 'Cerrado ganado', hint: 'Convertido a cliente', accent: 'from-emerald-500/25 to-emerald-400/5' },
-  { id: 'CERRADO_PERDIDO', label: 'Cerrado perdido', hint: 'No avanza en este ciclo', accent: 'from-rose-500/25 to-rose-400/5' },
+  { id: 'NUEVO', label: 'Nuevo', hint: 'Lead recien capturado', accent: 'from-cyan-500/20 to-cyan-400/5' },
+  { id: 'CONTACTO_INICIAL', label: 'Contacto inicial', hint: 'Primera conversacion activa', accent: 'from-blue-500/20 to-blue-400/5' },
+  { id: 'PROPUESTA_ENVIADA', label: 'Propuesta enviada', hint: 'Oferta economica entregada', accent: 'from-violet-500/20 to-violet-400/5' },
+  { id: 'NEGOCIACION', label: 'Negociacion', hint: 'Ajuste de alcance y condiciones', accent: 'from-amber-500/20 to-amber-400/5' },
+  { id: 'CERRADO_GANADO', label: 'Cerrado ganado', hint: 'Convertido a cliente', accent: 'from-emerald-500/20 to-emerald-400/5' },
+  { id: 'CERRADO_PERDIDO', label: 'Cerrado perdido', hint: 'No avanza en este ciclo', accent: 'from-rose-500/20 to-rose-400/5' },
 ]
 
 const EMPTY_KPIS: CrmKpis = {
@@ -198,7 +198,7 @@ export default function CrmPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-600">
         {error}
       </div>
     )
@@ -208,84 +208,87 @@ export default function CrmPage() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/80">CRM Comercial</p>
+          <p className="theme-dashboard-muted text-xs uppercase tracking-[0.2em]">CRM Comercial</p>
           <h1 className="theme-dashboard-text text-2xl font-semibold">Pipeline de Leads</h1>
           <p className="theme-dashboard-muted mt-1 text-sm">Gestiona el avance comercial desde cotizacion hasta cierre.</p>
         </div>
       </header>
 
+      {/* KPI row */}
       <section className="grid gap-3 md:grid-cols-5">
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Tasa de conversion</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.conversionRate}%</p>
           <p className="theme-dashboard-muted mt-1 text-xs">{kpis.wonLeads} ganados de {kpis.totalLeads} leads</p>
         </article>
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Valor pipeline</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{money(kpis.pipelineValue)}</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Excluye cerrados ganados y perdidos</p>
         </article>
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Leads activos</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.totalLeads}</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Lectura en tiempo real del pipeline</p>
         </article>
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Tareas vencidas</p>
-          <p className="mt-2 text-3xl font-semibold text-rose-300">{kpis.overdueTasks}</p>
+          <p className="mt-2 text-3xl font-semibold text-rose-500">{kpis.overdueTasks}</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Pendientes: {kpis.pendingTasks}</p>
         </article>
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">SLA comercial</p>
           <p className="theme-dashboard-text mt-2 text-3xl font-semibold">{kpis.slaComplianceRate}%</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Leads estancados: {kpis.stalledLeads}</p>
         </article>
       </section>
 
+      {/* Alerts + Aging */}
       <section className="grid gap-3 lg:grid-cols-2">
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="theme-dashboard-text text-sm font-semibold">Alertas comerciales</p>
-            <span className="text-xs text-slate-400">Top {kpis.alerts.length}</span>
+            <span className="theme-dashboard-muted text-xs">Top {kpis.alerts.length}</span>
           </div>
           <div className="space-y-2">
-            {kpis.alerts.length === 0 && <p className="text-xs text-slate-400">Sin alertas criticas por ahora.</p>}
+            {kpis.alerts.length === 0 && <p className="theme-dashboard-muted text-xs">Sin alertas criticas por ahora.</p>}
             {kpis.alerts.map((alert) => (
-              <div key={alert.quoteId} className="rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-xs">
+              <div key={alert.quoteId} className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="theme-dashboard-text font-medium">{alert.leadName}</span>
                   <span className={[
                     'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
-                    alert.severity === 'high' ? 'bg-rose-500/20 text-rose-200' : 'bg-amber-500/20 text-amber-200',
+                    alert.severity === 'high' ? 'bg-rose-500/15 text-rose-600' : 'bg-amber-500/15 text-amber-600',
                   ].join(' ')}>
                     {alert.severity}
                   </span>
                 </div>
-                <p className="mt-1 text-slate-300">{alert.stage} · {alert.ageHours}h · {alert.overdueTasks} tareas vencidas</p>
+                <p className="theme-dashboard-muted mt-1">{alert.stage} · {alert.ageHours}h · {alert.overdueTasks} tareas vencidas</p>
               </div>
             ))}
           </div>
         </article>
 
-        <article className="rounded-xl border theme-dashboard-border bg-white/5 p-4 backdrop-blur">
+        <article className="theme-dashboard-card rounded-xl border p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="theme-dashboard-text text-sm font-semibold">Aging por etapa</p>
-            <span className="text-xs text-slate-400">Promedio en dias</span>
+            <span className="theme-dashboard-muted text-xs">Promedio en dias</span>
           </div>
           <div className="space-y-2">
             {STAGES.map((stage) => (
-              <div key={stage.id} className="rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2 text-xs">
+              <div key={stage.id} className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-3 py-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="theme-dashboard-text">{stage.label}</span>
-                  <span className="text-slate-300">{kpis.agingByStage[stage.id]?.avgDays || 0} d</span>
+                  <span className="theme-dashboard-muted">{kpis.agingByStage[stage.id]?.avgDays || 0} d</span>
                 </div>
-                <p className="mt-1 text-slate-400">{kpis.agingByStage[stage.id]?.count || 0} leads · max {kpis.agingByStage[stage.id]?.maxDays || 0} d</p>
+                <p className="theme-dashboard-muted mt-1">{kpis.agingByStage[stage.id]?.count || 0} leads · max {kpis.agingByStage[stage.id]?.maxDays || 0} d</p>
               </div>
             ))}
           </div>
         </article>
       </section>
 
+      {/* Kanban board */}
       <section className="overflow-x-auto pb-2">
         <div className="flex min-w-[1320px] gap-4">
           {STAGES.map((stage) => (
@@ -293,18 +296,20 @@ export default function CrmPage() {
               key={stage.id}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => onDropStage(stage.id)}
-              className="w-[330px] shrink-0 rounded-2xl border theme-dashboard-border bg-slate-950/50 p-3"
+              className="w-[330px] shrink-0 rounded-2xl border theme-dashboard-border bg-[var(--dashboard-bg)] p-3"
             >
-              <div className={`rounded-xl border border-white/10 bg-gradient-to-br p-3 ${stage.accent}`}>
+              {/* Stage header */}
+              <div className={`rounded-xl border theme-dashboard-border bg-gradient-to-br p-3 ${stage.accent}`}>
                 <div className="flex items-center justify-between">
                   <h2 className="theme-dashboard-text text-sm font-semibold">{stage.label}</h2>
-                  <span className="rounded-full border border-white/20 px-2 py-0.5 text-xs text-slate-100">
+                  <span className="rounded-full border theme-dashboard-border theme-dashboard-muted px-2 py-0.5 text-xs">
                     {kpis.leadsByStage[stage.id] || 0}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-300/90">{stage.hint}</p>
+                <p className="theme-dashboard-muted mt-1 text-xs">{stage.hint}</p>
               </div>
 
+              {/* Lead cards */}
               <div className="mt-3 space-y-3">
                 {quotesByStage[stage.id].map((quote) => {
                   const hasProject = Boolean(quote.project?._id)
@@ -320,43 +325,44 @@ export default function CrmPage() {
                       key={quote._id}
                       draggable={savingQuoteId !== quote._id}
                       onDragStart={() => onDragStart(quote._id)}
-                      className="rounded-xl border border-white/10 bg-slate-900/75 p-3 shadow-lg transition hover:border-cyan-300/30"
+                      className="theme-dashboard-card rounded-xl border p-3 shadow-sm transition hover:border-[color:var(--dashboard-accent)]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="theme-dashboard-text text-sm font-semibold">{quote.client.name}</p>
                           <p className="theme-dashboard-muted text-xs">{quote.client.company || quote.client.email}</p>
                         </div>
-                        <span className="rounded-md bg-cyan-400/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-cyan-200">
+                        <span className="rounded-md bg-[var(--dashboard-accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--dashboard-accent)]">
                           {quote.serviceType}
                         </span>
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5">
+                        <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
                           <p className="theme-dashboard-muted">Valor</p>
                           <p className="theme-dashboard-text font-semibold">{money(quote.pricing.total)}</p>
                         </div>
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5">
+                        <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
                           <p className="theme-dashboard-muted">Lead score</p>
                           <p className="theme-dashboard-text font-semibold">{quote.leadScore}/100</p>
                         </div>
                       </div>
 
-                      <div className="mt-2 text-[11px] text-slate-300/90">
+                      <div className="theme-dashboard-muted mt-2 text-[11px]">
                         Creado: {new Date(quote.createdAt).toLocaleDateString('es-CO')}
                       </div>
-                      <div className="mt-1 text-[11px] text-slate-300/80">
+                      <div className="theme-dashboard-muted mt-1 text-[11px]">
                         Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length} · Vencidas: {overdueTasks.length}
                       </div>
                       {hasProject && (
-                        <div className="mt-1 text-[11px] text-emerald-200">Proyecto vinculado: {quote.project?.title}</div>
+                        <div className="mt-1 text-[11px] text-emerald-600">Proyecto vinculado: {quote.project?.title}</div>
                       )}
 
-                      <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-2">
-                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">Nota comercial</p>
+                      {/* Nota comercial */}
+                      <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
+                        <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Nota comercial</p>
                         {latestNote && (
-                          <p className="mb-2 text-[11px] text-slate-200">
+                          <p className="theme-dashboard-muted mb-2 text-[11px]">
                             Ultima: {latestNote.message}
                           </p>
                         )}
@@ -365,46 +371,47 @@ export default function CrmPage() {
                           onChange={(e) => setNoteDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
                           rows={2}
                           placeholder="Agregar contexto de la oportunidad..."
-                          className="w-full resize-none rounded-md border border-white/15 bg-slate-900/60 px-2 py-1 text-xs text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-300/60"
+                          className="theme-dashboard-input w-full resize-none rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
                         />
                         <button
                           type="button"
                           disabled={savingQuoteId === quote._id}
                           onClick={() => addNote(quote._id)}
-                          className="mt-2 w-full rounded-md border border-cyan-300/30 bg-cyan-400/15 px-2 py-1.5 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/25 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="theme-dashboard-button mt-2 w-full rounded-md px-2 py-1.5 text-xs font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Guardar nota
                         </button>
                       </div>
 
-                      <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-2">
-                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">Tareas comerciales</p>
+                      {/* Tareas */}
+                      <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
+                        <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Tareas comerciales</p>
                         <div className="space-y-1">
                           {tasks.slice(-3).reverse().map((task) => (
                             <button
                               key={task._id}
                               type="button"
                               onClick={() => toggleTask(quote._id, task._id, task.status)}
-                              className="flex w-full items-center justify-between rounded-md border border-white/10 px-2 py-1 text-left text-[11px] text-slate-200 hover:border-cyan-300/30"
+                              className="theme-dashboard-surface flex w-full items-center justify-between rounded-md border theme-dashboard-border px-2 py-1 text-left text-[11px] theme-dashboard-text hover:border-[color:var(--dashboard-accent)]"
                             >
                               <span className={task.status === 'completada' ? 'line-through opacity-60' : ''}>{task.title}</span>
-                              <span className="text-[10px] uppercase tracking-wide text-slate-400">{task.status}</span>
+                              <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
                             </button>
                           ))}
-                          {tasks.length === 0 && <p className="text-[11px] text-slate-400">Sin tareas aun.</p>}
+                          {tasks.length === 0 && <p className="theme-dashboard-muted text-[11px]">Sin tareas aun.</p>}
                         </div>
                         <div className="mt-2 flex gap-2">
                           <input
                             value={taskDraftById[quote._id] || ''}
                             onChange={(e) => setTaskDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
                             placeholder="Nueva tarea"
-                            className="w-full rounded-md border border-white/15 bg-slate-900/60 px-2 py-1 text-xs text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-300/60"
+                            className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
                           />
                           <button
                             type="button"
                             disabled={savingQuoteId === quote._id}
                             onClick={() => addTask(quote._id)}
-                            className="rounded-md border border-cyan-300/30 bg-cyan-400/15 px-2 py-1 text-xs text-cyan-100 hover:bg-cyan-300/25 disabled:opacity-50"
+                            className="theme-dashboard-button rounded-md px-2 py-1 text-xs hover:opacity-90 disabled:opacity-50"
                           >
                             +
                           </button>
@@ -415,7 +422,7 @@ export default function CrmPage() {
                 })}
 
                 {quotesByStage[stage.id].length === 0 && (
-                  <div className="rounded-xl border border-dashed border-white/20 bg-white/5 px-3 py-6 text-center text-xs text-slate-400">
+                  <div className="rounded-xl border border-dashed theme-dashboard-border theme-dashboard-muted px-3 py-6 text-center text-xs">
                     Arrastra leads aqui
                   </div>
                 )}
@@ -426,7 +433,7 @@ export default function CrmPage() {
       </section>
 
       {toast && (
-        <div className="fixed bottom-6 right-6 rounded-lg border border-cyan-300/30 bg-slate-900/95 px-4 py-2 text-sm text-cyan-100 shadow-xl">
+        <div className="theme-dashboard-card fixed bottom-6 right-6 rounded-lg border px-4 py-2 text-sm theme-dashboard-text shadow-xl">
           {toast}
         </div>
       )}

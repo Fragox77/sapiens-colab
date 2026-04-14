@@ -106,7 +106,7 @@ export default function PlanesPage() {
       </div>
 
       {changeError && (
-        <div className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2 text-sm text-rose-300">
+        <div className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2 text-sm text-semantic-danger">
           {changeError}
         </div>
       )}

@@ -17,10 +17,10 @@ export function KpiCard({ label, value, hint, deltaPct }: KpiCardProps) {
   const deltaClass = (deltaPct || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
 
   return (
-    <div className="rounded-xl border border-white/20 bg-white p-4 shadow-sm">
-      <p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-cobalt">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+    <div className="theme-dashboard-card rounded-xl border p-4 shadow-sm">
+      <p className="theme-dashboard-muted text-[11px] uppercase tracking-wide">{label}</p>
+      <p className="theme-dashboard-text mt-2 text-2xl font-bold">{value}</p>
+      {hint && <p className="theme-dashboard-muted mt-1 text-xs">{hint}</p>}
       {deltaLabel && <p className={`mt-1 text-xs font-medium ${deltaClass}`}>{deltaLabel}</p>}
     </div>
   )

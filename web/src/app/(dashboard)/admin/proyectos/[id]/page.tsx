@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { projectsApi, adminApi } from '@/lib/api'
 import type { Project, User } from '@/types'
 
@@ -15,19 +15,22 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  cotizado:   'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30',
-  activo:     'bg-blue-500/15 text-blue-300 border border-blue-500/30',
-  revision:   'bg-violet-500/15 text-violet-300 border border-violet-500/30',
-  ajuste:     'bg-orange-500/15 text-orange-300 border border-orange-500/30',
-  aprobado:   'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
-  completado: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
-  cancelado:  'bg-rose-500/15 text-rose-300 border border-rose-500/30',
+  cotizado:   'badge-yellow border',
+  activo:     'badge-blue border',
+  revision:   'badge-violet border',
+  ajuste:     'badge-orange border',
+  aprobado:   'badge-emerald border',
+  completado: 'badge-slate border',
+  cancelado:  'badge-rose border',
 }
+
+const STATUSES = ['cotizado', 'activo', 'revision', 'ajuste', 'aprobado', 'completado', 'cancelado']
 
 const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
 
 export default function AdminProyectoPage() {
   const { id } = useParams<{ id: string }>()
+  const router  = useRouter()
   const [project, setProject]   = useState<Project | null>(null)
   const [designers, setDesigners] = useState<User[]>([])
   const [loading, setLoading]   = useState(true)
@@ -35,6 +38,27 @@ export default function AdminProyectoPage() {
   const [selectedDesigner, setSelectedDesigner] = useState('')
   const [assigning, setAssigning]   = useState(false)
   const [completing, setCompleting] = useState(false)
+
+  // Status panel
+  const [showStatusPanel, setShowStatusPanel] = useState(false)
+  const [newStatus, setNewStatus]   = useState('')
+  const [statusMsg, setStatusMsg]   = useState('')
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  // Edit panel
+  const [showEditPanel, setShowEditPanel] = useState(false)
+  const [editTitle, setEditTitle]         = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editFormat, setEditFormat]       = useState('')
+  const [editServiceType, setEditServiceType] = useState('')
+  const [editComplexity, setEditComplexity]   = useState('')
+  const [editUrgency, setEditUrgency]         = useState('')
+  const [editNewTotal, setEditNewTotal]       = useState('')
+  const [savingEdit, setSavingEdit]           = useState(false)
+
+  // Delete
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     try {
@@ -49,6 +73,17 @@ export default function AdminProyectoPage() {
   }
 
   useEffect(() => { load() }, [id])
+
+  function openEditPanel(p: Project) {
+    setEditTitle(p.title)
+    setEditDescription(p.description)
+    setEditFormat(p.format || '')
+    setEditServiceType(p.serviceType)
+    setEditComplexity(p.complexity)
+    setEditUrgency(p.urgency)
+    setEditNewTotal('')
+    setShowEditPanel(true)
+  }
 
   async function handleAssign() {
     if (!selectedDesigner) return
@@ -73,6 +108,55 @@ export default function AdminProyectoPage() {
       setError(err instanceof Error ? err.message : 'Error al cerrar')
     } finally {
       setCompleting(false)
+    }
+  }
+
+  async function handleStatusSave() {
+    if (!newStatus) return
+    setSavingStatus(true)
+    try {
+      await adminApi.updateStatus(id, newStatus, statusMsg || undefined)
+      setShowStatusPanel(false)
+      setNewStatus('')
+      setStatusMsg('')
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cambiar estado')
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
+  async function handleEditSave() {
+    setSavingEdit(true)
+    try {
+      const data: Parameters<typeof adminApi.updateProject>[1] = {}
+      if (editTitle !== project!.title) data.title = editTitle
+      if (editDescription !== project!.description) data.description = editDescription
+      if (editFormat !== (project!.format || '')) data.format = editFormat
+      if (editServiceType !== project!.serviceType) data.serviceType = editServiceType
+      if (editComplexity !== project!.complexity) data.complexity = editComplexity
+      if (editUrgency !== project!.urgency) data.urgency = editUrgency
+      if (editNewTotal) data.newTotal = Number(editNewTotal)
+      await adminApi.updateProject(id, data)
+      setShowEditPanel(false)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await adminApi.deleteProject(id)
+      router.push('/admin/proyectos')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar')
+      setDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -102,11 +186,205 @@ export default function AdminProyectoPage() {
             <h1 className="theme-dashboard-text text-3xl font-bold">{p.title}</h1>
             <p className="theme-dashboard-muted mt-1 text-sm capitalize">{p.serviceType} · {p.complexity} · {p.urgency}</p>
           </div>
-          <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[p.status]}`}>
-            {STATUS_LABEL[p.status]}
+          <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[p.status] ?? 'badge-slate border'}`}>
+            {STATUS_LABEL[p.status] ?? p.status}
           </span>
         </div>
       </div>
+
+      {/* Admin control toolbar */}
+      <div className="theme-dashboard-border theme-dashboard-surface rounded-xl border p-4">
+        <div className="theme-dashboard-muted mb-3 text-xs font-semibold uppercase tracking-wider">Control del proyecto</div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setNewStatus(p.status); setShowStatusPanel(v => !v) }}
+            className="btn-action-yellow rounded-lg px-4 py-2 text-xs font-semibold transition-all"
+          >
+            Cambiar estado
+          </button>
+          <button
+            onClick={() => openEditPanel(p)}
+            className="btn-action-emerald rounded-lg px-4 py-2 text-xs font-semibold transition-all"
+          >
+            Editar proyecto
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="btn-action-rose rounded-lg px-4 py-2 text-xs font-semibold transition-all"
+          >
+            Eliminar
+          </button>
+        </div>
+
+        {/* Status panel */}
+        {showStatusPanel && (
+          <div className="mt-4 space-y-3 border-t theme-dashboard-border pt-4">
+            <div className="flex gap-3 flex-wrap">
+              {STATUSES.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setNewStatus(s)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    newStatus === s
+                      ? (STATUS_COLOR[s] ?? 'badge-slate border') + ' ring-2 ring-offset-1 ring-[#4C58FF]'
+                      : (STATUS_COLOR[s] ?? 'badge-slate border') + ' opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  {STATUS_LABEL[s]}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={statusMsg}
+              onChange={e => setStatusMsg(e.target.value)}
+              placeholder="Nota opcional (visible en historial)..."
+              rows={2}
+              className="theme-dashboard-input w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#4C58FF]"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleStatusSave}
+                disabled={!newStatus || savingStatus}
+                className="rounded-lg bg-[#4C58FF] px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-[#5A66FF] transition-colors"
+              >
+                {savingStatus ? 'Guardando...' : 'Guardar estado'}
+              </button>
+              <button
+                onClick={() => setShowStatusPanel(false)}
+                className="theme-dashboard-muted rounded-lg px-4 py-2 text-xs hover:theme-dashboard-text transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit panel */}
+        {showEditPanel && (
+          <div className="mt-4 space-y-3 border-t theme-dashboard-border pt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="theme-dashboard-muted text-xs">Título</label>
+                <input
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="theme-dashboard-muted text-xs">Descripción / Brief</label>
+                <textarea
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  rows={3}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#4C58FF]"
+                />
+              </div>
+              <div>
+                <label className="theme-dashboard-muted text-xs">Formatos</label>
+                <input
+                  value={editFormat}
+                  onChange={e => setEditFormat(e.target.value)}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                />
+              </div>
+              <div>
+                <label className="theme-dashboard-muted text-xs">Tipo de servicio</label>
+                <select
+                  value={editServiceType}
+                  onChange={e => setEditServiceType(e.target.value)}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                >
+                  {['branding','piezas','video-motion','fotografia','social-media','web','campana'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="theme-dashboard-muted text-xs">Complejidad</label>
+                <select
+                  value={editComplexity}
+                  onChange={e => setEditComplexity(e.target.value)}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                >
+                  {['basica','media','avanzada'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="theme-dashboard-muted text-xs">Urgencia</label>
+                <select
+                  value={editUrgency}
+                  onChange={e => setEditUrgency(e.target.value)}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                >
+                  {['normal','prioritario','express'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="theme-dashboard-muted text-xs">
+                  Nuevo total (renegociación) — <span className="text-semantic-warning">deja vacío para no cambiar precios</span>
+                </label>
+                <input
+                  type="number"
+                  value={editNewTotal}
+                  onChange={e => setEditNewTotal(e.target.value)}
+                  placeholder={`Actual: ${fmt(p.pricing.total)}`}
+                  className="theme-dashboard-input mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4C58FF]"
+                />
+                {editNewTotal && (
+                  <p className="text-xs theme-dashboard-muted mt-1">
+                    Se recalcularán: subtotal, IVA, comisión, pago diseñador, anticipo y balance.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleEditSave}
+                disabled={savingEdit}
+                className="rounded-lg bg-[#4C58FF] px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:bg-[#5A66FF] transition-colors"
+              >
+                {savingEdit ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+              <button
+                onClick={() => setShowEditPanel(false)}
+                className="theme-dashboard-muted rounded-lg px-4 py-2 text-xs hover:theme-dashboard-text transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && (
+        <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-5">
+          <h2 className="text-sm font-semibold text-semantic-danger mb-1">¿Eliminar este proyecto?</h2>
+          <p className="text-xs theme-dashboard-muted mb-4">
+            Esta acción es irreversible. El proyecto y todo su historial serán eliminados permanentemente.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-lg bg-rose-600 px-5 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="theme-dashboard-muted rounded-lg px-4 py-2 text-xs hover:theme-dashboard-text transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Partes */}
       <div className="grid grid-cols-2 gap-4">
@@ -237,7 +515,7 @@ export default function AdminProyectoPage() {
       {/* Revisiones */}
       <div className="theme-dashboard-muted text-xs">
         Revisiones: {p.revisions.used}/{p.revisions.max}
-        {p.revisions.extra > 0 && <span className="ml-2 text-rose-300">{p.revisions.extra} extra(s)</span>}
+        {p.revisions.extra > 0 && <span className="ml-2 text-semantic-danger">{p.revisions.extra} extra(s)</span>}
       </div>
 
       {/* Timeline */}
@@ -278,7 +556,7 @@ function PayBlock({ label, amount, paid }: { label: string; amount: string; paid
     <div className={`rounded-lg p-3 border ${paid ? 'border-green-500/30 bg-green-500/10' : 'theme-dashboard-border theme-dashboard-surface-2'}`}>
       <div className="theme-dashboard-muted text-xs mb-1">{label}</div>
       <div className="theme-dashboard-text font-bold text-sm">{amount}</div>
-      <div className={`text-xs mt-1 ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
+      <div className={`text-xs mt-1 ${paid ? 'text-semantic-success' : 'text-semantic-warning'}`}>
         {paid ? '✓ Pagado' : 'Pendiente'}
       </div>
     </div>

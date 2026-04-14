@@ -71,6 +71,35 @@ export const adminApi = {
   financiero:  () => api.get<import('@/types').FinancieroReport>('/api/admin/financiero'),
   anticipo:    (id: string) =>
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}/anticipo`, {}),
+  // ── Control total de proyectos ──
+  updateStatus: (id: string, status: string, message?: string) =>
+    api.patch<import('@/types').Project>(`/api/admin/projects/${id}/status`, { status, message }),
+  updateProject: (id: string, data: { title?: string; description?: string; format?: string; serviceType?: string; complexity?: string; urgency?: string; newTotal?: number }) =>
+    api.patch<import('@/types').Project>(`/api/admin/projects/${id}`, data),
+  deleteProject: (id: string) =>
+    api.delete<{ ok: boolean }>(`/api/admin/projects/${id}`),
+  // ── CRM Clientes ──
+  clients: () => api.get<ClientStat[]>('/api/admin/clients'),
+  client:  (id: string) => api.get<ClientDetail>(`/api/admin/clients/${id}`),
+  updateClient: (id: string, data: { name?: string; company?: string; phone?: string }) =>
+    api.patch<import('@/types').User>(`/api/admin/clients/${id}`, data),
+}
+
+interface ClientStat {
+  _id: string
+  name: string
+  email: string
+  company?: string
+  phone?: string
+  createdAt: string
+  isActive: boolean
+  stats: { totalProyectos: number; totalFacturado: number; pipeline: number; activos: number }
+}
+
+interface ClientDetail {
+  client: import('@/types').User
+  projects: import('@/types').Project[]
+  quotes: import('@/types').Quote[]
 }
 
 export const quotesApi = {

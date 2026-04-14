@@ -271,7 +271,7 @@ export default function NuevoPedidoPage() {
           {/* Formato / entregables (opcional) */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 block">
-              Formatos / entregables <span className="text-gray-300">(opcional)</span>
+              Formatos / entregables <span className="theme-dashboard-muted">(opcional)</span>
             </label>
             <input
               type="text"

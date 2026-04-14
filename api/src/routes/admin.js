@@ -5,6 +5,7 @@ const Project = require('../models/Project');
 const User = require('../models/User');
 const Application = require('../models/Application');
 const ActivityLog = require('../models/ActivityLog');
+const Quote = require('../models/Quote');
 const { calcularPagoDisenador } = require('../utils/cotizador');
 
 async function logActivity(payload) {
@@ -84,6 +85,155 @@ router.patch('/projects/:id/complete', async (req, res) => {
     });
 
     res.json({ project, designerPay: project.pricing.designerPay });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/projects/:id/status — Cambiar estado manualmente
+router.patch('/projects/:id/status', async (req, res) => {
+  try {
+    const VALID = ['cotizado', 'activo', 'revision', 'ajuste', 'aprobado', 'completado', 'cancelado'];
+    const { status, message } = req.body;
+    if (!VALID.includes(status)) return res.status(400).json({ error: `Estado inválido. Opciones: ${VALID.join(', ')}` });
+
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+
+    const prev = project.status;
+    project.status = status;
+    if (status === 'completado' && !project.completedAt) project.completedAt = new Date();
+    project.timeline.push({
+      action: 'ESTADO_CAMBIADO',
+      by: req.user.id,
+      message: message || `Admin cambió estado: ${prev} → ${status}`,
+    });
+    await project.save();
+
+    await logActivity({
+      userId: req.user.id, projectId: project._id, actorRole: 'admin',
+      eventType: 'status_changed', meta: { from: prev, to: status },
+    });
+
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/projects/:id — Editar proyecto (título, brief, pricing)
+router.patch('/projects/:id', async (req, res) => {
+  try {
+    const { title, description, format, serviceType, complexity, urgency, newTotal } = req.body;
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+
+    if (title)       project.title = title.trim();
+    if (description) project.description = description.trim();
+    if (format !== undefined) project.format = format;
+    if (serviceType) project.serviceType = serviceType;
+    if (complexity)  project.complexity  = complexity;
+    if (urgency)     project.urgency     = urgency;
+
+    // Renegociación: recalcular todo desde nuevo total
+    if (newTotal && Number(newTotal) > 0) {
+      const total    = Math.round(Number(newTotal));
+      const subtotal = Math.round(total / 1.19);
+      const iva      = total - subtotal;
+      const commRate = project.pricing.subtotal > 0
+        ? project.pricing.commission / project.pricing.subtotal
+        : 0.25;
+      const commission  = Math.round(subtotal * commRate);
+      const designerPay = subtotal - commission;
+      const anticipo    = Math.round(total * 0.5);
+      const balance     = total - anticipo;
+      project.pricing = { base: project.pricing.base, subtotal, iva, total, anticipo, balance, commission, designerPay };
+    }
+
+    project.timeline.push({ action: 'EDITADO', by: req.user.id, message: 'Proyecto actualizado por admin' });
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/projects/:id — Eliminar proyecto
+router.delete('/projects/:id', async (req, res) => {
+  try {
+    const project = await Project.findByIdAndDelete(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Proyecto no encontrado' });
+    res.json({ ok: true, deleted: project._id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── CLIENTES ─────────────────────────────────────────────────
+
+// GET /api/admin/clients — Lista de clientes con estadísticas
+router.get('/clients', async (_req, res) => {
+  try {
+    const clients = await User.find({ role: 'cliente' })
+      .select('name email company phone createdAt isActive')
+      .sort({ createdAt: -1 });
+
+    const clientIds = clients.map(c => c._id);
+    const stats = await Project.aggregate([
+      { $match: { client: { $in: clientIds } } },
+      { $group: {
+        _id: '$client',
+        totalProyectos: { $sum: 1 },
+        totalFacturado: { $sum: { $cond: [{ $eq: ['$status', 'completado'] }, '$pricing.total', 0] } },
+        pipeline:       { $sum: { $cond: [{ $in: ['$status', ['activo','revision','ajuste','aprobado']] }, '$pricing.total', 0] } },
+        activos:        { $sum: { $cond: [{ $in: ['$status', ['activo','revision','ajuste','aprobado']] }, 1, 0] } },
+        ultimoProyecto: { $max: '$createdAt' },
+      }},
+    ]);
+
+    const statsMap = {};
+    for (const s of stats) statsMap[s._id.toString()] = s;
+
+    const result = clients.map(c => ({
+      ...c.toObject(),
+      stats: statsMap[c._id.toString()] || { totalProyectos: 0, totalFacturado: 0, pipeline: 0, activos: 0 },
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/clients/:id — Detalle completo del cliente
+router.get('/clients/:id', async (req, res) => {
+  try {
+    const client = await User.findById(req.params.id).select('-password');
+    if (!client || client.role !== 'cliente') return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    const [projects, quotes] = await Promise.all([
+      Project.find({ client: req.params.id }).sort({ createdAt: -1 }),
+      Quote.find({ 'client.email': client.email }).sort({ createdAt: -1 }),
+    ]);
+
+    res.json({ client, projects, quotes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/clients/:id — Editar datos de un cliente
+router.patch('/clients/:id', async (req, res) => {
+  try {
+    const { name, company, phone } = req.body;
+    const client = await User.findById(req.params.id);
+    if (!client || client.role !== 'cliente') return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    if (name)    client.name    = name.trim();
+    if (company !== undefined) client.company = company;
+    if (phone   !== undefined) client.phone   = phone;
+    await client.save();
+    res.json(client.toSafeJSON ? client.toSafeJSON() : { _id: client._id, name: client.name, email: client.email, company: client.company, phone: client.phone });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
