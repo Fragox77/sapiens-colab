@@ -14,7 +14,7 @@ function fmtDelta(deltaPct?: number | null) {
 
 export function KpiCard({ label, value, hint, deltaPct }: KpiCardProps) {
   const deltaLabel = fmtDelta(deltaPct)
-  const deltaClass = (deltaPct || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+  const deltaClass = (deltaPct || 0) >= 0 ? 'text-semantic-success' : 'text-semantic-danger'
 
   return (
     <div className="theme-dashboard-card rounded-xl border p-4 shadow-sm">

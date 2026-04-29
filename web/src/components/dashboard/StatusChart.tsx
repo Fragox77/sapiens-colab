@@ -24,20 +24,20 @@ export function StatusChart({ data }: { data: StatusMetricPoint[] }) {
   const total = data.reduce((sum, row) => sum + row.count, 0) || 1
 
   return (
-    <div className="rounded-xl border border-white/20 bg-white p-5">
-      <h3 className="text-sm font-semibold text-cobalt">Proyectos por estado</h3>
+    <div className="theme-dashboard-card rounded-xl border p-5">
+      <h3 className="theme-dashboard-text text-sm font-semibold">Proyectos por estado</h3>
       <div className="mt-4 space-y-3">
         {data.map((row) => {
           const pct = (row.count / total) * 100
           return (
             <div key={row.status}>
-              <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+              <div className="theme-dashboard-muted mb-1 flex items-center justify-between text-xs">
                 <span>{STATUS_LABEL[row.status] || row.status}</span>
                 <span>{row.count}</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100">
+              <div className="h-2 w-full rounded-full bg-[var(--chart-bar-bg)]">
                 <div
-                  className={`h-2 rounded-full ${STATUS_COLOR[row.status] || 'bg-slate-500'}`}
+                  className={`h-2 rounded-full ${STATUS_COLOR[row.status] || 'bg-[var(--dashboard-muted)]'}`}
                   style={{ width: `${Math.max(pct, 4)}%` }}
                 />
               </div>
