@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { adminApi, metricsApi, projectsApi } from '@/lib/api'
-import { TemplateCard } from '@/components/ui/template/Cards'
 import { TemplateOverviewChart, TemplateRadialBreakdown } from '@/components/ui/template/Charts'
 import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
+import { MetricsDashboard } from '@/components/dashboard/MetricsDashboard'
 import type { DashboardMetrics, Project, User } from '@/types'
 
 type Preset = '7d' | '30d' | '90d' | 'custom'
@@ -25,11 +25,6 @@ function previousRange(current: Range): Range {
   const prevTo = new Date(current.from.getTime() - 1)
   const prevFrom = new Date(prevTo.getTime() - duration)
   return { from: prevFrom, to: prevTo }
-}
-
-function calcDelta(current: number, prev: number) {
-  if (!Number.isFinite(prev) || prev === 0) return null
-  return ((current - prev) / prev) * 100
 }
 
 function toInputDate(date: Date) {
@@ -118,7 +113,6 @@ export default function AdminDashboard() {
 
   const pending = projects.filter(p => p.status === 'cotizado')
   const active = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
-  const topPerformer = dashboard?.talent.topPerformers?.[0]
   const avgRevisions = projects.length > 0
     ? Math.round((projects.reduce((sum, p) => sum + (p.revisions?.used || 0), 0) / projects.length) * 10) / 10
     : 0
@@ -189,108 +183,12 @@ export default function AdminDashboard() {
           )}
 
           {dashboard && (
-            <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
-              <TemplateCard
-                title="Ingresos totales"
-                value={fmt(dashboard.business.revenueTotal)}
-                hint="Negocio"
-                delta={
-                  calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) !== null
-                    ? `${(calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.revenueTotal, prevDashboard?.business.revenueTotal || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Valor promedio"
-                value={fmt(dashboard.business.averageTicket)}
-                hint="Negocio"
-                delta={
-                  calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) !== null
-                    ? `${(calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.averageTicket, prevDashboard?.business.averageTicket || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Margen"
-                value={`${dashboard.business.marginPct}%`}
-                hint="Negocio"
-                delta={
-                  calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) !== null
-                    ? `${(calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.business.marginPct, prevDashboard?.business.marginPct || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Proyectos activos"
-                value={String(dashboard.operation.activeProjects)}
-                hint="Operación"
-                delta={
-                  calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) !== null
-                    ? `${(calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.operation.activeProjects, prevDashboard?.operation.activeProjects || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Tasa finalización"
-                value={`${dashboard.operation.completionRatePct}%`}
-                hint="Operación"
-                delta={
-                  calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) !== null
-                    ? `${(calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.operation.completionRatePct, prevDashboard?.operation.completionRatePct || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Entrega promedio"
-                value={`${dashboard.operation.avgDeliveryDays} días`}
-                hint="Eficiencia"
-                delta={
-                  calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) !== null
-                    ? `${(calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(prevDashboard?.operation.avgDeliveryDays || 0, dashboard.operation.avgDeliveryDays) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Satisfacción"
-                value={`${dashboard.client.satisfactionAvg}/5`}
-                hint="Cliente"
-                delta={
-                  calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) !== null
-                    ? `${(calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.client.satisfactionAvg, prevDashboard?.client.satisfactionAvg || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-              <TemplateCard
-                title="Recompra"
-                value={`${dashboard.client.repurchaseRatePct}%`}
-                hint="Cliente"
-                delta={
-                  calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) !== null
-                    ? `${(calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) || 0) > 0 ? '+' : ''}${Math.round((calcDelta(dashboard.client.repurchaseRatePct, prevDashboard?.client.repurchaseRatePct || 0) || 0) * 10) / 10}%`
-                    : undefined
-                }
-              />
-            </div>
-          )}
-
-          {dashboard && (
-            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
-              <TemplateCard
-                title="Colaborador más productivo"
-                value={topPerformer ? `${topPerformer.performanceScore}` : '0'}
-                hint={topPerformer ? `${topPerformer.name} · ${topPerformer.completedProjects} completados` : 'Sin datos aun'}
-              />
-              <TemplateCard
-                title="Tiempo promedio por proyecto"
-                value={`${avgProjectDays} días`}
-                hint="Promedio real de proyectos completados"
-              />
-              <TemplateCard
-                title="Promedio de revisiones"
-                value={`${avgRevisions}`}
-                hint="Cambios solicitados por proyecto"
-              />
-            </div>
+            <MetricsDashboard
+              dashboard={dashboard}
+              prevDashboard={prevDashboard}
+              avgProjectDays={avgProjectDays}
+              avgRevisions={avgRevisions}
+            />
           )}
 
           {dashboard && (
