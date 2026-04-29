@@ -456,10 +456,9 @@ export default function CrmPage() {
               <div key={alert.quoteId} className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="theme-dashboard-text font-medium">{alert.leadName}</span>
-                  <span className={[
-                    'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
-                    alert.severity === 'high' ? 'bg-rose-500/15 text-semantic-danger' : 'bg-amber-500/15 text-semantic-warning',
-                  ].join(' ')}>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${
+                    alert.severity === 'high' ? 'bg-rose-500/15 text-semantic-danger' : 'bg-amber-500/15 text-semantic-warning'
+                  }`}>
                     {alert.severity}
                   </span>
                 </div>
@@ -594,7 +593,7 @@ export default function CrmPage() {
                                   <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
                                 </div>
                                 {task.dueAt && (
-                                  <span className={`mt-0.5 text-[10px] ${isOverdue ? 'text-rose-500' : 'theme-dashboard-muted'}`}>
+                                  <span className={`mt-0.5 text-[10px] ${isOverdue ? 'text-semantic-danger' : 'theme-dashboard-muted'}`}>
                                     {isOverdue ? '⚠ ' : ''}Vence: {new Date(task.dueAt).toLocaleDateString('es-CO')}
                                   </span>
                                 )}
