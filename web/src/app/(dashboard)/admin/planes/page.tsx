@@ -88,7 +88,7 @@ export default function PlanesPage() {
   }
 
   if (loading) return (
-    <div className="text-slate-400 text-sm">Cargando planes...</div>
+    <div className="theme-dashboard-muted text-sm">Cargando planes...</div>
   )
 
   const currentPlan = (overview?.plan ?? 'basic') as Plan
