@@ -1,11 +1,21 @@
+const Lead = require('./lead.model');
+
 async function saveLead(tenantId, payload, score) {
-  return {
-    id: `${tenantId}-lead-${Date.now()}`,
+  const doc = await Lead.create({
     tenantId,
-    ...payload,
+    empresa:     payload.empresa     || payload.company || '',
+    companySize: payload.companySize || '',
+    urgency:     payload.urgency     || 'normal',
+    estado:      payload.estado      || 'nuevo',
     score,
-    createdAt: new Date().toISOString(),
-  };
+    source:      payload.source      || 'web',
+    contact: {
+      name:  payload.contact?.name  || payload.name  || '',
+      email: payload.contact?.email || payload.email || '',
+      phone: payload.contact?.phone || payload.phone || '',
+    },
+  });
+  return doc.toObject();
 }
 
 module.exports = { saveLead };
