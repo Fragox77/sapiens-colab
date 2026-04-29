@@ -1,6 +1,17 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
 import { quotesApi } from '@/lib/api'
 import type { CrmKpis, CrmTimeline, LeadStage, Quote } from '@/types'
 
@@ -41,6 +52,101 @@ const EMPTY_KPIS: CrmKpis = {
   alerts: [],
 }
 
+// ─── Kanban primitives ────────────────────────────────────────────────────────
+
+function KanbanColumn({
+  stageId,
+  accent,
+  label,
+  hint,
+  count,
+  children,
+}: {
+  stageId: LeadStage
+  accent: string
+  label: string
+  hint: string
+  count: number
+  children: React.ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stageId })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`w-[330px] shrink-0 rounded-2xl border p-3 transition-colors ${
+        isOver
+          ? 'border-[color:var(--dashboard-accent)] bg-[var(--dashboard-accent)]/5'
+          : 'theme-dashboard-border bg-[var(--dashboard-bg)]'
+      }`}
+    >
+      <div className={`rounded-xl border theme-dashboard-border bg-gradient-to-br p-3 ${accent}`}>
+        <div className="flex items-center justify-between">
+          <h2 className="theme-dashboard-text text-sm font-semibold">{label}</h2>
+          <span className="rounded-full border theme-dashboard-border theme-dashboard-muted px-2 py-0.5 text-xs">
+            {count}
+          </span>
+        </div>
+        <p className="theme-dashboard-muted mt-1 text-xs">{hint}</p>
+      </div>
+      <div className="mt-3 space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function KanbanCard({
+  quoteId,
+  disabled,
+  children,
+}: {
+  quoteId: string
+  disabled: boolean
+  children: React.ReactNode
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: quoteId,
+    disabled,
+  })
+
+  return (
+    <article
+      ref={setNodeRef}
+      className={`theme-dashboard-card rounded-xl border p-3 shadow-sm transition hover:border-[color:var(--dashboard-accent)] ${
+        isDragging ? 'opacity-40' : ''
+      }`}
+    >
+      {/* Handle de arrastre — solo esta zona activa el drag */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="mb-2 flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
+        title="Mover lead"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          className="theme-dashboard-muted opacity-40"
+          fill="currentColor"
+        >
+          <circle cx="3" cy="3" r="1.2" />
+          <circle cx="9" cy="3" r="1.2" />
+          <circle cx="3" cy="6" r="1.2" />
+          <circle cx="9" cy="6" r="1.2" />
+          <circle cx="3" cy="9" r="1.2" />
+          <circle cx="9" cy="9" r="1.2" />
+        </svg>
+        <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide opacity-40 select-none">
+          arrastrar
+        </span>
+      </div>
+      {children}
+    </article>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function CrmPage() {
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [kpis, setKpis] = useState<CrmKpis>(EMPTY_KPIS)
@@ -48,6 +154,10 @@ export default function CrmPage() {
   const [error, setError] = useState('')
   const [draggingQuoteId, setDraggingQuoteId] = useState<string | null>(null)
   const [savingQuoteId, setSavingQuoteId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
   const [noteDraftById, setNoteDraftById] = useState<Record<string, string>>({})
   const [taskDraftById, setTaskDraftById] = useState<Record<string, string>>({})
   const [taskDueDateById, setTaskDueDateById] = useState<Record<string, string>>({})
@@ -132,26 +242,32 @@ export default function CrmPage() {
     return counts
   }, [filteredQuotes])
 
-  function onDragStart(quoteId: string) {
-    setDraggingQuoteId(quoteId)
+  function handleDragStart({ active }: DragStartEvent) {
+    setDraggingQuoteId(active.id as string)
   }
 
-  async function onDropStage(nextStage: LeadStage) {
-    if (!draggingQuoteId) return
+  async function handleDragEnd({ active, over }: DragEndEvent) {
+    const quoteId = active.id as string
+    const nextStage = over?.id as LeadStage | undefined
 
-    const current = quotes.find((q) => q._id === draggingQuoteId)
+    if (!nextStage) {
+      setDraggingQuoteId(null)
+      return
+    }
+
+    const current = quotes.find((q) => q._id === quoteId)
     if (!current || (current.stage || 'NUEVO') === nextStage) {
       setDraggingQuoteId(null)
       return
     }
 
     const snapshot = quotes
-    setQuotes((prev) => prev.map((q) => (q._id === draggingQuoteId ? { ...q, stage: nextStage } : q)))
-    setSavingQuoteId(draggingQuoteId)
+    setQuotes((prev) => prev.map((q) => (q._id === quoteId ? { ...q, stage: nextStage } : q)))
+    setSavingQuoteId(quoteId)
 
     try {
-      const response = await quotesApi.updateStage(draggingQuoteId, nextStage)
-      setQuotes((prev) => prev.map((q) => (q._id === draggingQuoteId ? response.data : q)))
+      const response = await quotesApi.updateStage(quoteId, nextStage)
+      setQuotes((prev) => prev.map((q) => (q._id === quoteId ? response.data : q)))
       const refreshed = await quotesApi.crmKpis()
       setKpis(refreshed.data)
       setToast('Etapa actualizada')
@@ -237,7 +353,7 @@ export default function CrmPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-600">
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-semantic-danger">
         {error}
       </div>
     )
@@ -317,7 +433,7 @@ export default function CrmPage() {
         </article>
         <article className="theme-dashboard-card rounded-xl border p-4">
           <p className="theme-dashboard-muted text-xs uppercase tracking-wide">Tareas vencidas</p>
-          <p className="mt-2 text-3xl font-semibold text-rose-500">{kpis.overdueTasks}</p>
+          <p className="mt-2 text-3xl font-semibold text-semantic-danger">{kpis.overdueTasks}</p>
           <p className="theme-dashboard-muted mt-1 text-xs">Pendientes: {kpis.pendingTasks}</p>
         </article>
         <article className="theme-dashboard-card rounded-xl border p-4">
@@ -342,7 +458,7 @@ export default function CrmPage() {
                   <span className="theme-dashboard-text font-medium">{alert.leadName}</span>
                   <span className={[
                     'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
-                    alert.severity === 'high' ? 'bg-rose-500/15 text-rose-600' : 'bg-amber-500/15 text-amber-600',
+                    alert.severity === 'high' ? 'bg-rose-500/15 text-semantic-danger' : 'bg-amber-500/15 text-semantic-warning',
                   ].join(' ')}>
                     {alert.severity}
                   </span>
@@ -374,27 +490,21 @@ export default function CrmPage() {
 
       {/* Kanban board */}
       <section className="overflow-x-auto pb-2">
-        <div className="flex min-w-[1320px] gap-4">
-          {STAGES.map((stage) => (
-            <div
-              key={stage.id}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDropStage(stage.id)}
-              className="w-[330px] shrink-0 rounded-2xl border theme-dashboard-border bg-[var(--dashboard-bg)] p-3"
-            >
-              {/* Stage header */}
-              <div className={`rounded-xl border theme-dashboard-border bg-gradient-to-br p-3 ${stage.accent}`}>
-                <div className="flex items-center justify-between">
-                  <h2 className="theme-dashboard-text text-sm font-semibold">{stage.label}</h2>
-                  <span className="rounded-full border theme-dashboard-border theme-dashboard-muted px-2 py-0.5 text-xs">
-                    {leadsByStage[stage.id]}
-                  </span>
-                </div>
-                <p className="theme-dashboard-muted mt-1 text-xs">{stage.hint}</p>
-              </div>
-
-              {/* Lead cards */}
-              <div className="mt-3 space-y-3">
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex min-w-[1320px] gap-4">
+            {STAGES.map((stage) => (
+              <KanbanColumn
+                key={stage.id}
+                stageId={stage.id}
+                accent={stage.accent}
+                label={stage.label}
+                hint={stage.hint}
+                count={leadsByStage[stage.id]}
+              >
                 {quotesByStage[stage.id].map((quote) => {
                   const hasProject = Boolean(quote.project?._id)
                   const notes = quote.crm?.notes || []
@@ -405,11 +515,10 @@ export default function CrmPage() {
                   const overdueTasks = openTasks.filter((task) => task.dueAt && new Date(task.dueAt).getTime() < Date.now())
 
                   return (
-                    <article
+                    <KanbanCard
                       key={quote._id}
-                      draggable={savingQuoteId !== quote._id}
-                      onDragStart={() => onDragStart(quote._id)}
-                      className="theme-dashboard-card rounded-xl border p-3 shadow-sm transition hover:border-[color:var(--dashboard-accent)]"
+                      quoteId={quote._id}
+                      disabled={savingQuoteId === quote._id}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -439,7 +548,7 @@ export default function CrmPage() {
                         Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length} · Vencidas: {overdueTasks.length}
                       </div>
                       {hasProject && (
-                        <div className="mt-1 text-[11px] text-emerald-600">Proyecto vinculado: {quote.project?.title}</div>
+                        <div className="mt-1 text-[11px] text-semantic-success">Proyecto vinculado: {quote.project?.title}</div>
                       )}
 
                       {/* Nota comercial */}
@@ -519,7 +628,7 @@ export default function CrmPage() {
                           </div>
                         </div>
                       </div>
-                    </article>
+                    </KanbanCard>
                   )
                 })}
 
@@ -528,10 +637,25 @@ export default function CrmPage() {
                     Arrastra leads aqui
                   </div>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
+              </KanbanColumn>
+            ))}
+          </div>
+
+          <DragOverlay dropAnimation={null}>
+            {draggingQuoteId ? (() => {
+              const q = quotes.find((quote) => quote._id === draggingQuoteId)
+              return q ? (
+                <div className="theme-dashboard-card w-[330px] rotate-1 rounded-xl border p-3 shadow-2xl opacity-95">
+                  <p className="theme-dashboard-text text-sm font-semibold">{q.client.name}</p>
+                  <p className="theme-dashboard-muted text-xs">{q.client.company || q.client.email}</p>
+                  <p className="theme-dashboard-muted mt-2 text-xs">
+                    {q.serviceType} · {money(q.pricing.total)}
+                  </p>
+                </div>
+              ) : null
+            })() : null}
+          </DragOverlay>
+        </DndContext>
       </section>
 
       {toast && (
