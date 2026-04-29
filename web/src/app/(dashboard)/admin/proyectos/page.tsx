@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { projectsApi } from '@/lib/api'
 import type { Project, ProjectStatus } from '@/types'
+import { SLABadge } from '@/components/dashboard/SLABadge'
 
 const STATUS_LABEL: Record<string, string> = {
   cotizado:   'Cotizado',
@@ -70,7 +71,7 @@ export default function AdminProyectosPage() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Buscar por título, cliente o diseñador..."
-        className="theme-dashboard-input mb-4 w-full rounded-xl px-4 py-3 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF]"
+        className="theme-dashboard-input mb-4 w-full rounded-xl px-4 py-3 text-sm placeholder:text-[color:var(--dashboard-muted)] focus:outline-none focus:border-[#4C58FF]"
       />
 
       {/* Filtros */}
@@ -120,11 +121,12 @@ export default function AdminProyectosPage() {
                     <span className="ml-2">· {new Date(p.createdAt).toLocaleDateString('es-CO')}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="text-right hidden sm:block">
                     <div className="theme-dashboard-text text-sm font-bold">{fmt(p.pricing.total)}</div>
                     <div className="theme-dashboard-muted text-xs">Rev. {p.revisions.used}/{p.revisions.max}</div>
                   </div>
+                  <SLABadge deadlineAt={p.deadlineAt} status={p.status} />
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>
                     {STATUS_LABEL[p.status]}
                   </span>
