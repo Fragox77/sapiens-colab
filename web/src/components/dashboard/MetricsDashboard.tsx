@@ -64,6 +64,33 @@ const STATUS_BAR: Record<StatusLevel, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function buildCsvContent(
+  dashboard: DashboardMetrics,
+  avgProjectDays: number,
+  avgRevisions: number,
+): string {
+  const { business, operation, client, talent } = dashboard
+  const fecha = new Date().toISOString().slice(0, 10)
+
+  const rows: [string, string][] = [
+    ['Ingresos totales',              fmtCOP(business.revenueTotal)],
+    ['Ticket promedio',               fmtCOP(business.averageTicket)],
+    ['Margen neto',                   `${business.marginPct}%`],
+    ['Proyectos activos',             String(operation.activeProjects)],
+    ['Tasa de finalización',          `${operation.completionRatePct}%`],
+    ['Entrega promedio',              `${operation.avgDeliveryDays} días`],
+    ['Satisfacción promedio',         client.satisfactionAvg === 0 ? '— / 5' : `${client.satisfactionAvg} / 5`],
+    ['Tasa de recompra',              `${client.repurchaseRatePct}%`],
+    ['Revisiones por proyecto',       String(avgRevisions)],
+    ['Tiempo promedio por proyecto',  avgProjectDays === 0 ? '—' : `${avgProjectDays} días`],
+    ['Proyectos por diseñador (avg)', String(talent.projectsPerDesignerAvg)],
+  ]
+
+  const header = 'fecha,metrica,valor'
+  const lines = rows.map(([metrica, valor]) => `${fecha},"${metrica}","${valor}"`)
+  return [header, ...lines].join('\n')
+}
+
 function calcDelta(current: number, prev: number): number | null {
   if (!Number.isFinite(prev) || prev === 0) return null
   return ((current - prev) / prev) * 100
@@ -230,6 +257,17 @@ export function MetricsDashboard({
   const prev = prevDashboard
   const topPerformer = talent.topPerformers?.[0] ?? null
 
+  function handleExportCsv() {
+    const csv  = buildCsvContent(dashboard, avgProjectDays, avgRevisions)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `metricas-sapiens-${periodo}-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // ── Negocio ─────────────────────────────────────────────────────────────────
   const revDelta    = calcDelta(business.revenueTotal, prev?.business.revenueTotal ?? 0)
   const ticketDelta = calcDelta(business.averageTicket, prev?.business.averageTicket ?? 0)
@@ -283,6 +321,12 @@ export function MetricsDashboard({
             · comparado con el periodo anterior equivalente
           </span>
         )}
+        <button
+          onClick={handleExportCsv}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border theme-dashboard-border bg-[var(--dashboard-surface-2)] px-3 py-1 text-xs font-medium theme-dashboard-text hover:bg-[var(--dashboard-surface)] transition-colors"
+        >
+          Exportar CSV
+        </button>
       </div>
 
       {/* ── NEGOCIO ─────────────────────────────────────────────────────────── */}
