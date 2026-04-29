@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { projectsApi } from '@/lib/api'
 import type { Project } from '@/types'
+import { SLABadge } from '@/components/dashboard/SLABadge'
 
 export default function DisenadorDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -40,9 +41,10 @@ export default function DisenadorDashboard() {
                       <div className="text-xs text-gray-400">Tu pago neto</div>
                     </div>
                   </div>
-                  <div className="mt-3 text-xs text-gray-400">
-                    Revisiones usadas: {p.revisions.used}/{p.revisions.max}
-                    {p.status === 'ajuste' && <span className="ml-2 text-orange-500 font-medium">⚠ Ajuste solicitado</span>}
+                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+                    <span>Revisiones usadas: {p.revisions.used}/{p.revisions.max}</span>
+                    {p.status === 'ajuste' && <span className="text-orange-500 font-medium">⚠ Ajuste solicitado</span>}
+                    <SLABadge deadlineAt={p.deadlineAt} status={p.status} />
                   </div>
                 </a>
               ))}
