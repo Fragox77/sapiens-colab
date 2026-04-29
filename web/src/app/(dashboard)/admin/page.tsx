@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { adminApi, metricsApi, projectsApi } from '@/lib/api'
 import { TemplateOverviewChart, TemplateRadialBreakdown } from '@/components/ui/template/Charts'
 import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
-import { MetricsDashboard } from '@/components/dashboard/MetricsDashboard'
+import { MetricsDashboard, type Periodo } from '@/components/dashboard/MetricsDashboard'
 import type { DashboardMetrics, Project, User } from '@/types'
 
 type Preset = '7d' | '30d' | '90d' | 'custom'
@@ -111,6 +111,8 @@ export default function AdminDashboard() {
     }
   }
 
+  const periodo: Periodo = preset === '7d' ? 'semana' : preset === '90d' ? 'trimestre' : 'mes'
+
   const pending = projects.filter(p => p.status === 'cotizado')
   const active = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
   const avgRevisions = projects.length > 0
@@ -177,7 +179,7 @@ export default function AdminDashboard() {
       ) : (
         <>
           {metricsError && (
-            <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-semantic-danger">
               {metricsError}
             </div>
           )}
@@ -188,6 +190,7 @@ export default function AdminDashboard() {
               prevDashboard={prevDashboard}
               avgProjectDays={avgProjectDays}
               avgRevisions={avgRevisions}
+              periodo={periodo}
             />
           )}
 
