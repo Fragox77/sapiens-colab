@@ -96,6 +96,16 @@ export default function CrmPage() {
     return grouped
   }, [quotes])
 
+  // Contadores derivados del estado local — siempre en sync con las tarjetas
+  const leadsByStage = useMemo(() => {
+    const counts: Record<LeadStage, number> = {
+      NUEVO: 0, CONTACTO_INICIAL: 0, PROPUESTA_ENVIADA: 0,
+      NEGOCIACION: 0, CERRADO_GANADO: 0, CERRADO_PERDIDO: 0,
+    }
+    for (const quote of quotes) counts[quote.stage || 'NUEVO']++
+    return counts
+  }, [quotes])
+
   function onDragStart(quoteId: string) {
     setDraggingQuoteId(quoteId)
   }
@@ -303,7 +313,7 @@ export default function CrmPage() {
                 <div className="flex items-center justify-between">
                   <h2 className="theme-dashboard-text text-sm font-semibold">{stage.label}</h2>
                   <span className="rounded-full border theme-dashboard-border theme-dashboard-muted px-2 py-0.5 text-xs">
-                    {kpis.leadsByStage[stage.id] || 0}
+                    {leadsByStage[stage.id]}
                   </span>
                 </div>
                 <p className="theme-dashboard-muted mt-1 text-xs">{stage.hint}</p>
