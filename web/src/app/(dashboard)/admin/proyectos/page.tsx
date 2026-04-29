@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { projectsApi } from '@/lib/api'
-import type { Project, ProjectStatus } from '@/types'
+import { useState } from 'react'
+import type { ProjectStatus } from '@/types'
 import { SLABadge } from '@/components/dashboard/SLABadge'
+import { useProjects } from '@/hooks/useProjects'
 
 const STATUS_LABEL: Record<string, string> = {
   cotizado:   'Cotizado',
@@ -37,14 +37,9 @@ const FILTERS: { value: string; label: string }[] = [
 const fmt = (n: number) => `$${n.toLocaleString('es-CO')}`
 
 export default function AdminProyectosPage() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [filter, setFilter]     = useState('todos')
-  const [search, setSearch]     = useState('')
-  const [loading, setLoading]   = useState(true)
-
-  useEffect(() => {
-    projectsApi.list().then(p => setProjects(p as Project[])).finally(() => setLoading(false))
-  }, [])
+  const { projects, loading } = useProjects()
+  const [filter, setFilter]   = useState('todos')
+  const [search, setSearch]   = useState('')
 
   const filtered = projects
     .filter(p => filter === 'todos' || p.status === filter)

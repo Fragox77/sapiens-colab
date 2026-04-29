@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { projectsApi, adminApi } from '@/lib/api'
 import type { Project, User } from '@/types'
+import { useUpdateProject } from '@/hooks/useUpdateProject'
 
 const STATUS_LABEL: Record<string, string> = {
   cotizado:   'Esperando anticipo',
@@ -41,9 +42,9 @@ export default function AdminProyectoPage() {
 
   // Status panel
   const [showStatusPanel, setShowStatusPanel] = useState(false)
-  const [newStatus, setNewStatus]   = useState('')
-  const [statusMsg, setStatusMsg]   = useState('')
-  const [savingStatus, setSavingStatus] = useState(false)
+  const [newStatus, setNewStatus] = useState('')
+  const [statusMsg, setStatusMsg] = useState('')
+  const { updateStatus, saving: savingStatus } = useUpdateProject(id)
 
   // Edit panel
   const [showEditPanel, setShowEditPanel] = useState(false)
@@ -113,17 +114,14 @@ export default function AdminProyectoPage() {
 
   async function handleStatusSave() {
     if (!newStatus) return
-    setSavingStatus(true)
     try {
-      await adminApi.updateStatus(id, newStatus, statusMsg || undefined)
+      await updateStatus(newStatus, statusMsg || undefined)
       setShowStatusPanel(false)
       setNewStatus('')
       setStatusMsg('')
       await load()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cambiar estado')
-    } finally {
-      setSavingStatus(false)
     }
   }
 
