@@ -33,6 +33,11 @@ const urgencies: Array<{ value: Urgency; label: string }> = [
   { value: 'express', label: 'Express' },
 ]
 
+// ── PDF ─────────────────────────────────────────────────────────────────────
+// Reemplaza con la URL pública del logo en Cloudinary
+const SAPIENS_LOGO_URL =
+  'https://res.cloudinary.com/sapiens-colab/image/upload/v1/brand/logo-sapiens-colab.png'
+
 function formatMoney(value: number) {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -49,6 +54,7 @@ export default function CotizarPage() {
   const [complexity, setComplexity] = useState<Complexity>('media')
   const [urgency, setUrgency] = useState<Urgency>('normal')
   const [loading, setLoading] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [quote, setQuote] = useState<QuoteCreationResponse['data'] | null>(null)
@@ -82,6 +88,158 @@ export default function CotizarPage() {
       setError(err instanceof Error ? err.message : 'No fue posible generar la cotizacion')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function downloadPdf() {
+    if (!quote) return
+    setPdfLoading(true)
+    try {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ])
+
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const W = doc.internal.pageSize.getWidth()
+      const M = 20 // margen horizontal
+
+      // ── Header oscuro ────────────────────────────────────────────────────
+      doc.setFillColor(15, 23, 42)
+      doc.rect(0, 0, W, 38, 'F')
+
+      // Logo — intenta cargar desde Cloudinary; si falla, muestra texto
+      let logoLoaded = false
+      try {
+        const resp = await fetch(SAPIENS_LOGO_URL)
+        if (resp.ok) {
+          const blob = await resp.blob()
+          const b64 = await new Promise<string>((res) => {
+            const reader = new FileReader()
+            reader.onload = () => res(reader.result as string)
+            reader.readAsDataURL(blob)
+          })
+          doc.addImage(b64, 'PNG', M, 9, 38, 18)
+          logoLoaded = true
+        }
+      } catch { /* continúa sin logo */ }
+
+      if (!logoLoaded) {
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(13)
+        doc.setFont('helvetica', 'bold')
+        doc.text('SAPIENS COLAB', M, 23)
+      }
+
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      doc.text('COTIZACIÓN', W - M, 23, { align: 'right' })
+
+      // ── Fila de meta (ref + fechas) ──────────────────────────────────────
+      let y = 50
+      const issueDate = new Date()
+      const expiryDate = new Date(issueDate.getTime() + 15 * 24 * 60 * 60 * 1000)
+      const fmtDate = (d: Date) =>
+        d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+
+      doc.setFontSize(8)
+      doc.setTextColor(100, 116, 139)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Ref: ${quote.quoteId}`, M, y)
+      doc.text(`Emitida: ${fmtDate(issueDate)}`, W / 2, y, { align: 'center' })
+      doc.text(`Válida hasta: ${fmtDate(expiryDate)}`, W - M, y, { align: 'right' })
+
+      y += 6
+      doc.setDrawColor(6, 182, 212)
+      doc.setLineWidth(0.4)
+      doc.line(M, y, W - M, y)
+
+      // ── Bloque cliente ───────────────────────────────────────────────────
+      y += 10
+      doc.setFontSize(7.5)
+      doc.setTextColor(100, 116, 139)
+      doc.text('CLIENTE', M, y)
+
+      y += 5
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(15, 23, 42)
+      doc.text(name, M, y)
+
+      y += 5
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(100, 116, 139)
+      if (company) { doc.text(company, M, y); y += 4 }
+      doc.text(email, M, y)
+
+      // ── Tabla servicio ───────────────────────────────────────────────────
+      y += 12
+      doc.setFontSize(7.5)
+      doc.setTextColor(100, 116, 139)
+      doc.text('DETALLE DEL SERVICIO', M, y)
+      y += 4
+
+      const complexityLabel = complexities.find((c) => c.value === complexity)?.label ?? complexity
+      const urgencyLabel = urgencies.find((u) => u.value === urgency)?.label ?? urgency
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Servicio', 'Complejidad', 'Urgencia']],
+        body: [[selectedLabel, complexityLabel, urgencyLabel]],
+        margin: { left: M, right: M },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
+        theme: 'grid',
+      })
+
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+
+      // ── Tabla precios ────────────────────────────────────────────────────
+      doc.setFontSize(7.5)
+      doc.setTextColor(100, 116, 139)
+      doc.text('RESUMEN ECONÓMICO', M, y)
+      y += 4
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Concepto', 'Valor (COP)']],
+        body: [
+          ['Subtotal (sin IVA)', formatMoney(quote.pricing.subtotal)],
+          ['IVA (19%)', formatMoney(quote.pricing.iva)],
+          ['Total', formatMoney(quote.pricing.total)],
+          ['Anticipo requerido (50%)', formatMoney(quote.pricing.anticipo)],
+          ['Saldo al cierre', formatMoney(quote.pricing.balance)],
+        ],
+        margin: { left: M, right: M },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
+        columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
+        didParseCell: (data) => {
+          if (data.row.index === 2) {
+            data.cell.styles.fillColor = [236, 254, 255]
+            data.cell.styles.textColor = [8, 145, 178]
+          }
+        },
+        theme: 'grid',
+      })
+
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14
+
+      // ── Pie de página ────────────────────────────────────────────────────
+      doc.setFontSize(7.5)
+      doc.setTextColor(148, 163, 184)
+      doc.text(
+        'Esta cotización es válida por 15 días desde la fecha de emisión. Precios en COP con IVA incluido.',
+        W / 2, y, { align: 'center' }
+      )
+      y += 4.5
+      doc.text('sapiens-colab.com · hola@sapiens-colab.com', W / 2, y, { align: 'center' })
+
+      doc.save(`cotizacion-sapiens-${quote.quoteId}.pdf`)
+    } finally {
+      setPdfLoading(false)
     }
   }
 
@@ -243,6 +401,22 @@ export default function CotizarPage() {
               <ResultRow label="Etapa CRM" value={quote.stage || 'NUEVO'} />
               <ResultRow label="Estado" value={quote.project ? quote.project.status : 'Sin proyecto'} />
               <ResultRow label="Referencia" value={quote.project ? quote.project.title : `Lead ${quote.quoteId}`} />
+
+              <button
+                type="button"
+                onClick={downloadPdf}
+                disabled={pdfLoading}
+                className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-300/30 bg-cyan-400/10 px-5 py-3.5 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pdfLoading ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-300/40 border-t-cyan-300" />
+                    Generando PDF...
+                  </>
+                ) : (
+                  'Descargar cotización PDF'
+                )}
+              </button>
             </div>
           )}
         </motion.aside>
