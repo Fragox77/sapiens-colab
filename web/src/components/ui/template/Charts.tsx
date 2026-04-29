@@ -196,12 +196,12 @@ export function TemplateOverviewChart({
             Comparar
           </button>
           <div className="theme-dashboard-border theme-dashboard-surface inline-flex rounded-md border p-0.5 text-[10px]">
-            <button onClick={() => setVista('completo')} className={`rounded px-2 py-1 ${vista === 'completo' ? 'bg-[#4C58FF] text-white' : 'text-slate-400'}`}>Todo</button>
+            <button onClick={() => setVista('completo')} className={`rounded px-2 py-1 ${vista === 'completo' ? 'bg-[#4C58FF] text-white' : 'theme-dashboard-muted'}`}>Todo</button>
               <span className="group relative inline-flex">
                 <button
                   onClick={() => setVista('ultimos8')}
                   disabled={comparar}
-                  className={`rounded px-2 py-1 ${vista === 'ultimos8' ? 'bg-[#4C58FF] text-white' : 'text-slate-400'} ${comparar ? 'cursor-not-allowed opacity-40' : ''}`}
+                  className={`rounded px-2 py-1 ${vista === 'ultimos8' ? 'bg-[#4C58FF] text-white' : 'theme-dashboard-muted'} ${comparar ? 'cursor-not-allowed opacity-40' : ''}`}
                 >
                   8
                 </button>
@@ -215,7 +215,7 @@ export function TemplateOverviewChart({
                 <button
                   onClick={() => setVista('ultimos4')}
                   disabled={comparar}
-                  className={`rounded px-2 py-1 ${vista === 'ultimos4' ? 'bg-[#4C58FF] text-white' : 'text-slate-400'} ${comparar ? 'cursor-not-allowed opacity-40' : ''}`}
+                  className={`rounded px-2 py-1 ${vista === 'ultimos4' ? 'bg-[#4C58FF] text-white' : 'theme-dashboard-muted'} ${comparar ? 'cursor-not-allowed opacity-40' : ''}`}
                 >
                   4
                 </button>
@@ -359,17 +359,17 @@ export function TemplateOverviewChart({
                 <p>Completados: {hoveredPoint.completedProjects}</p>
                 {comparar && hoveredPrevPoint && (
                   <>
-                    <p className="text-cyan-200">Ingresos periodo anterior: ${Math.round(hoveredPrevPoint.revenue).toLocaleString('es-CO')}</p>
-                    <p className="text-violet-200">Costos periodo anterior: ${Math.round(hoveredPrevPoint.cost).toLocaleString('es-CO')}</p>
+                    <p className="text-[color:var(--chart-line-revenue)]">Ingresos periodo anterior: ${Math.round(hoveredPrevPoint.revenue).toLocaleString('es-CO')}</p>
+                    <p className="text-[color:var(--chart-line-cost)]">Costos periodo anterior: ${Math.round(hoveredPrevPoint.cost).toLocaleString('es-CO')}</p>
                   </>
                 )}
                 {revenueDelta !== null && (
-                  <p className={revenueDelta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
+                  <p className={revenueDelta >= 0 ? 'text-semantic-success' : 'text-semantic-danger'}>
                     Ingresos vs anterior: {revenueDelta >= 0 ? '+' : ''}{Math.round(revenueDelta * 10) / 10}%
                   </p>
                 )}
                 {costDelta !== null && (
-                  <p className={costDelta <= 0 ? 'text-emerald-300' : 'text-rose-300'}>
+                  <p className={costDelta <= 0 ? 'text-semantic-success' : 'text-semantic-danger'}>
                     Costos vs anterior: {costDelta >= 0 ? '+' : ''}{Math.round(costDelta * 10) / 10}%
                   </p>
                 )}
@@ -397,7 +397,7 @@ export function TemplateOverviewChart({
               <span className="inline-block h-2.5 w-2.5 rounded bg-[#F472B6]" /> Línea de costos
             </button>
             {comparar && (
-              <span className="flex items-center gap-1.5 rounded-md border border-cyan-300/25 px-2 py-1 text-cyan-200">
+              <span className="flex items-center gap-1.5 rounded-md border border-[var(--chart-line-revenue)]/25 px-2 py-1 text-[color:var(--chart-line-revenue)]">
                 <span className="inline-block h-2.5 w-2.5 rounded bg-cyan-300" /> Periodo anterior superpuesto
               </span>
             )}
