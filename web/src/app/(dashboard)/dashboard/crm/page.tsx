@@ -50,6 +50,7 @@ export default function CrmPage() {
   const [savingQuoteId, setSavingQuoteId] = useState<string | null>(null)
   const [noteDraftById, setNoteDraftById] = useState<Record<string, string>>({})
   const [taskDraftById, setTaskDraftById] = useState<Record<string, string>>({})
+  const [taskDueDateById, setTaskDueDateById] = useState<Record<string, string>>({})
   const [toast, setToast] = useState('')
 
   const money = (value: number) => `$${value.toLocaleString('es-CO')}`
@@ -175,11 +176,14 @@ export default function CrmPage() {
     const title = (taskDraftById[quoteId] || '').trim()
     if (!title) return
 
+    const dueAt = taskDueDateById[quoteId] || undefined
+
     setSavingQuoteId(quoteId)
     try {
-      const response = await quotesApi.addTask(quoteId, { title })
+      const response = await quotesApi.addTask(quoteId, { title, dueAt })
       applyTimelineToQuote(quoteId, response.data)
       setTaskDraftById((prev) => ({ ...prev, [quoteId]: '' }))
+      setTaskDueDateById((prev) => ({ ...prev, [quoteId]: '' }))
       setToast('Tarea creada')
     } catch (err) {
       setToast(err instanceof Error ? err.message : 'No se pudo crear la tarea')
@@ -397,34 +401,52 @@ export default function CrmPage() {
                       <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
                         <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Tareas comerciales</p>
                         <div className="space-y-1">
-                          {tasks.slice(-3).reverse().map((task) => (
-                            <button
-                              key={task._id}
-                              type="button"
-                              onClick={() => toggleTask(quote._id, task._id, task.status)}
-                              className="theme-dashboard-surface flex w-full items-center justify-between rounded-md border theme-dashboard-border px-2 py-1 text-left text-[11px] theme-dashboard-text hover:border-[color:var(--dashboard-accent)]"
-                            >
-                              <span className={task.status === 'completada' ? 'line-through opacity-60' : ''}>{task.title}</span>
-                              <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
-                            </button>
-                          ))}
+                          {tasks.slice(-3).reverse().map((task) => {
+                            const isOverdue = task.status === 'pendiente' && task.dueAt && new Date(task.dueAt) < new Date()
+                            return (
+                              <button
+                                key={task._id}
+                                type="button"
+                                onClick={() => toggleTask(quote._id, task._id, task.status)}
+                                className="theme-dashboard-surface flex w-full flex-col rounded-md border theme-dashboard-border px-2 py-1 text-left text-[11px] theme-dashboard-text hover:border-[color:var(--dashboard-accent)]"
+                              >
+                                <div className="flex w-full items-center justify-between">
+                                  <span className={task.status === 'completada' ? 'line-through opacity-60' : ''}>{task.title}</span>
+                                  <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
+                                </div>
+                                {task.dueAt && (
+                                  <span className={`mt-0.5 text-[10px] ${isOverdue ? 'text-rose-500' : 'theme-dashboard-muted'}`}>
+                                    {isOverdue ? '⚠ ' : ''}Vence: {new Date(task.dueAt).toLocaleDateString('es-CO')}
+                                  </span>
+                                )}
+                              </button>
+                            )
+                          })}
                           {tasks.length === 0 && <p className="theme-dashboard-muted text-[11px]">Sin tareas aun.</p>}
                         </div>
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-2 space-y-1.5">
                           <input
                             value={taskDraftById[quote._id] || ''}
                             onChange={(e) => setTaskDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
                             placeholder="Nueva tarea"
                             className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
                           />
-                          <button
-                            type="button"
-                            disabled={savingQuoteId === quote._id}
-                            onClick={() => addTask(quote._id)}
-                            className="theme-dashboard-button rounded-md px-2 py-1 text-xs hover:opacity-90 disabled:opacity-50"
-                          >
-                            +
-                          </button>
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={taskDueDateById[quote._id] || ''}
+                              onChange={(e) => setTaskDueDateById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
+                              className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
+                            />
+                            <button
+                              type="button"
+                              disabled={savingQuoteId === quote._id}
+                              onClick={() => addTask(quote._id)}
+                              className="theme-dashboard-button rounded-md px-2 py-1 text-xs hover:opacity-90 disabled:opacity-50"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </article>
