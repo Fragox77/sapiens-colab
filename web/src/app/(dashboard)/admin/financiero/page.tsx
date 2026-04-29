@@ -177,12 +177,12 @@ export default function FinancieroAdminPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <p className="text-slate-400 text-sm">Cargando datos financieros...</p>
+      <p className="theme-dashboard-muted text-sm">Cargando datos financieros...</p>
     </div>
   )
 
   if (error || !data) return (
-    <div className="bg-red-50 border border-red-100 rounded-xl p-5 text-red-600 text-sm">{error}</div>
+    <div className="border border-rose-500/30 bg-rose-500/10 rounded-xl p-5 text-semantic-danger text-sm">{error}</div>
   )
 
   const { kpis, proyectos, deudaDisenadores, ingresosPorMes } = data
@@ -215,7 +215,7 @@ export default function FinancieroAdminPage() {
           </span>
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-              isPlanSynced ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'
+              isPlanSynced ? 'bg-emerald-500/15 text-emerald-500' : 'bg-orange-500/15 text-orange-500'
             }`}
           >
             {isPlanSynced ? 'Sincronizado' : 'Desactualizado'}
@@ -250,7 +250,7 @@ export default function FinancieroAdminPage() {
           </button>
         </div>
         {saveMessage && (
-          <p className={`mt-2 text-xs ${saveMessage.includes('correctamente') ? 'text-emerald-600' : 'text-red-500'}`}>
+          <p className={`mt-2 text-xs ${saveMessage.includes('correctamente') ? 'text-semantic-success' : 'text-semantic-danger'}`}>
             {saveMessage}
           </p>
         )}
@@ -340,18 +340,18 @@ export default function FinancieroAdminPage() {
             <table className="w-full text-sm">
               <thead className="theme-dashboard-border theme-dashboard-surface-2 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Proyecto</th>
-                  <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400 md:table-cell">Estado</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-400">Total</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">Anticipo</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">Balance</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide theme-dashboard-muted">Proyecto</th>
+                  <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide theme-dashboard-muted md:table-cell">Estado</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide theme-dashboard-muted">Total</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide theme-dashboard-muted">Anticipo</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide theme-dashboard-muted">Balance</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="theme-dashboard-border divide-y">
                 {proyectosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-sm text-slate-500">No hay proyectos con este filtro</td>
+                    <td colSpan={6} className="py-10 text-center text-sm theme-dashboard-muted">No hay proyectos con este filtro</td>
                   </tr>
                 ) : proyectosFiltrados.map(p => (
                   <PagoRow
