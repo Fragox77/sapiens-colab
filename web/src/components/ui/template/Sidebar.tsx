@@ -33,7 +33,7 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
   return (
     <aside className="theme-dashboard-sidebar relative w-64 border-r backdrop-blur-xl">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_-20%_0%,rgba(79,70,229,0.18),transparent_45%)]" />
-      <div className="px-5 py-5 border-b border-white/10">
+      <div className="px-5 py-5 border-b border-[var(--dashboard-border)]">
         <Link href="/" className="block">
           <p className="theme-dashboard-muted text-xs uppercase tracking-[0.25em]">Sapiens</p>
           <p className="theme-dashboard-text text-sm font-bold">Colab Platform</p>
@@ -53,7 +53,7 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
                   : 'theme-dashboard-muted nav-hover hover:text-[var(--dashboard-text)] border border-transparent'
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-[#7280FF]' : 'bg-slate-500'}`} />
+              <span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-[#7280FF]' : 'bg-[var(--dashboard-muted)]'}`} />
               {item.label}
             </Link>
           )
