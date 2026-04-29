@@ -52,11 +52,29 @@ function normalizePayload(payload = {}) {
   return normalized;
 }
 
-function inferLeadScore({ complexity, urgency, serviceType }) {
-  const serviceWeight = serviceType === 'campana' || serviceType === 'web' ? 30 : 20;
-  const complexityWeight = complexity === 'avanzada' ? 35 : complexity === 'media' ? 25 : 15;
-  const urgencyWeight = urgency === 'express' ? 35 : urgency === 'prioritario' ? 25 : 15;
-  return Math.min(100, serviceWeight + complexityWeight + urgencyWeight);
+/**
+ * Calcula el score de un lead (0-100).
+ *   Presupuesto (40 pts): basado en pricing.total
+ *   Urgencia    (30 pts): urgency enum
+ *   Sector      (30 pts): serviceType
+ */
+function calcularScore({ pricing, urgency, serviceType }) {
+  const total = (pricing && pricing.total) ? pricing.total : 0;
+
+  const presupuestoPts =
+    total >= 3_000_000 ? 40 :
+    total >= 1_500_000 ? 30 :
+    total >=   500_000 ? 20 : 10;
+
+  const urgenciaPts =
+    urgency === 'express'     ? 30 :
+    urgency === 'prioritario' ? 20 : 10;
+
+  const sectorPts =
+    ['branding', 'web', 'campana'].includes(serviceType)   ? 30 :
+    ['social-media', 'video-motion'].includes(serviceType) ? 20 : 10;
+
+  return presupuestoPts + urgenciaPts + sectorPts;
 }
 
 function stageToLeadStatus(stage) {
@@ -160,7 +178,11 @@ async function createQuoteAndProject(payload) {
   });
 
   const clientUser = await resolveClientUser(normalizedPayload.client);
-  const leadScore = inferLeadScore(normalizedPayload);
+  const leadScore = calcularScore({
+    pricing,
+    urgency: normalizedPayload.urgency,
+    serviceType: normalizedPayload.serviceType,
+  });
   const quote = await Quote.create({
     client: normalizedPayload.client,
     serviceType: normalizedPayload.serviceType,
@@ -550,6 +572,7 @@ async function getCrmKpisForUser(user) {
 }
 
 module.exports = {
+  calcularScore,
   createQuoteAndProject,
   getQuoteByIdForUser,
   getQuotesForUser,

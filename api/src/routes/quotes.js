@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { calcularScore } = require('../services/quote.service');
 const {
 	createQuote,
 	getQuoteById,
@@ -42,7 +43,7 @@ router.patch('/:id/tasks/:taskId', auth, updateQuoteTask);
 // PATCH /api/quotes/:id — Editar datos de la cotización/lead (admin)
 router.patch('/:id', auth, async (req, res) => {
   try {
-    const { client, serviceType, complexity, urgency, leadScore } = req.body;
+    const { client, serviceType, complexity, urgency } = req.body;
     const Quote = require('../models/Quote');
     const quote = await Quote.findById(req.params.id);
     if (!quote) return res.status(404).json({ error: 'Cotización no encontrada' });
@@ -56,7 +57,12 @@ router.patch('/:id', auth, async (req, res) => {
     if (serviceType !== undefined) quote.serviceType = serviceType;
     if (complexity  !== undefined) quote.complexity  = complexity;
     if (urgency     !== undefined) quote.urgency     = urgency;
-    if (leadScore   !== undefined) quote.leadScore   = Number(leadScore);
+
+    quote.leadScore = calcularScore({
+      pricing:     quote.pricing,
+      urgency:     quote.urgency,
+      serviceType: quote.serviceType,
+    });
 
     await quote.save();
     res.json({ success: true, data: quote });
