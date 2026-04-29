@@ -1,4 +1,26 @@
 require('dotenv').config();
+
+// ─── Validación de variables de entorno ──────────────────────────────────────
+(function validateEnv() {
+  const required = {
+    MONGODB_URI:     'URI de conexión a MongoDB Atlas',
+    JWT_SECRET:      'Secreto para firmar y verificar JWT',
+    CLOUDINARY_URL:  'URL de configuración de Cloudinary (cloudinary://key:secret@cloud)',
+    WHATSAPP_NUMBER: 'Número de WhatsApp para notificaciones (formato internacional)',
+  };
+
+  const missing = Object.entries(required).filter(([key]) => !process.env[key]?.trim());
+
+  if (missing.length === 0) return;
+
+  console.error('\n[ENV] El servidor no puede arrancar: faltan variables de entorno requeridas.\n');
+  missing.forEach(([key, desc]) =>
+    console.error(`  ✗  ${key.padEnd(18)} — ${desc}`)
+  );
+  console.error('\nAgrega las variables faltantes al archivo .env y reinicia.\n');
+  process.exit(1);
+})();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
