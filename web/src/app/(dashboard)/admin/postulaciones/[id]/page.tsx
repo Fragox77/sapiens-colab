@@ -147,7 +147,7 @@ export default function PostulacionDetailPage() {
 
   if (error || !app) return (
     <div className="text-center py-16">
-      <div className="text-red-500 text-sm mb-4">{error || 'No encontrada'}</div>
+      <div className="text-semantic-danger text-sm mb-4">{error || 'No encontrada'}</div>
       <button onClick={() => router.back()} className="text-[#A5B4FC] text-sm underline">Volver</button>
     </div>
   )
@@ -244,19 +244,19 @@ export default function PostulacionDetailPage() {
           {app.briefAssigned && (
             <div className="rounded-2xl border border-yellow-500/25 bg-yellow-500/10 p-5">
               <div className="mb-2 text-xs font-semibold text-semantic-warning">Brief asignado</div>
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-yellow-200">{app.briefAssigned}</p>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed theme-dashboard-text">{app.briefAssigned}</p>
             </div>
           )}
 
           {/* Usuario activado */}
           {activated && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
-              <div className="text-sm font-bold text-green-800 mb-2">¡Diseñador activado!</div>
-              <div className="text-xs text-green-700 space-y-1">
-                <div>Email: <strong>{activated.email}</strong></div>
-                <div>Contraseña temporal: <strong className="font-mono bg-green-100 px-1 rounded">{activated.tempPassword}</strong></div>
+            <div className="border border-emerald-500/30 bg-emerald-500/10 rounded-2xl p-5">
+              <div className="text-sm font-bold theme-dashboard-text mb-2">¡Diseñador activado!</div>
+              <div className="text-xs theme-dashboard-muted space-y-1">
+                <div>Email: <strong className="theme-dashboard-text">{activated.email}</strong></div>
+                <div>Contraseña temporal: <strong className="font-mono bg-emerald-500/20 px-1 rounded theme-dashboard-text">{activated.tempPassword}</strong></div>
               </div>
-              <p className="text-xs text-green-600 mt-2">Comparte estas credenciales con el diseñador para que acceda a la plataforma.</p>
+              <p className="text-xs theme-dashboard-muted mt-2">Comparte estas credenciales con el diseñador para que acceda a la plataforma.</p>
             </div>
           )}
         </div>
@@ -271,7 +271,7 @@ export default function PostulacionDetailPage() {
               {SCORE_FIELDS.map(f => (
                 <div key={f.key}>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="theme-dashboard-muted">{f.label} <span className="text-slate-500">({f.weight})</span></span>
+                    <span className="theme-dashboard-muted">{f.label} <span className="theme-dashboard-muted opacity-70">({f.weight})</span></span>
                     <span className="theme-dashboard-text font-bold">{scores[f.key] ?? 0}</span>
                   </div>
                   <input
@@ -307,7 +307,7 @@ export default function PostulacionDetailPage() {
               disabled={isClosed}
               onChange={e => setNotes(e.target.value)}
               placeholder="Notas internas sobre el postulante..."
-              className="theme-dashboard-input mb-4 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF] disabled:opacity-60"
+              className="theme-dashboard-input mb-4 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-[color:var(--dashboard-muted)] focus:outline-none focus:border-[#4C58FF] disabled:opacity-60"
             />
 
             {/* Estado */}
@@ -329,7 +329,7 @@ export default function PostulacionDetailPage() {
             </div>
 
             {evalError && (
-              <div className="mb-3 text-xs text-red-600 bg-red-50 rounded-lg p-2">{evalError}</div>
+              <div className="mb-3 text-xs text-semantic-danger border border-rose-500/30 bg-rose-500/10 rounded-lg p-2">{evalError}</div>
             )}
 
             {!isClosed && (
@@ -372,11 +372,11 @@ export default function PostulacionDetailPage() {
                     value={briefText}
                     onChange={e => setBriefText(e.target.value)}
                     placeholder="Describe el brief de prueba técnica que debe resolver el postulante..."
-                    className="theme-dashboard-input mb-3 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-[#4C58FF]"
+                    className="theme-dashboard-input mb-3 w-full resize-none rounded-xl px-3 py-2.5 text-sm placeholder:text-[color:var(--dashboard-muted)] focus:outline-none focus:border-[#4C58FF]"
                     autoFocus
                   />
                   {briefError && (
-                    <div className="mb-3 text-xs text-red-600 bg-red-50 rounded-lg p-2">{briefError}</div>
+                    <div className="mb-3 text-xs text-semantic-danger border border-rose-500/30 bg-rose-500/10 rounded-lg p-2">{briefError}</div>
                   )}
                   <div className="flex gap-2">
                     <button
@@ -407,14 +407,14 @@ export default function PostulacionDetailPage() {
               </p>
 
               {activateError && (
-                <div className="mb-3 text-xs text-red-600 bg-red-50 rounded-lg p-2">{activateError}</div>
+                <div className="mb-3 text-xs text-semantic-danger border border-rose-500/30 bg-rose-500/10 rounded-lg p-2">{activateError}</div>
               )}
 
               <div className="flex gap-3">
                 <button
                   onClick={handleReject}
                   disabled={rejecting}
-                  className="flex-1 border border-red-200 text-red-500 py-2.5 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                  className="btn-action-rose flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   {rejecting ? 'Rechazando...' : 'Rechazar'}
                 </button>
@@ -431,17 +431,17 @@ export default function PostulacionDetailPage() {
 
           {/* Estado: aceptada */}
           {app.status === 'aceptada' && !activated && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
-              <div className="font-semibold text-green-800 mb-1">Diseñador activo en la plataforma</div>
-              <p className="text-xs text-green-600">Este postulante ya fue aceptado y tiene una cuenta de diseñador activa.</p>
+            <div className="border border-emerald-500/30 bg-emerald-500/10 rounded-2xl p-5">
+              <div className="font-semibold theme-dashboard-text mb-1">Diseñador activo en la plataforma</div>
+              <p className="text-xs theme-dashboard-muted">Este postulante ya fue aceptado y tiene una cuenta de diseñador activa.</p>
             </div>
           )}
 
           {/* Estado: rechazada */}
           {app.status === 'rechazada' && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-              <div className="font-semibold text-red-700 mb-1">Postulación rechazada</div>
-              {app.notes && <p className="text-xs text-red-600 mt-1">{app.notes}</p>}
+            <div className="border border-rose-500/30 bg-rose-500/10 rounded-2xl p-5">
+              <div className="font-semibold text-semantic-danger mb-1">Postulación rechazada</div>
+              {app.notes && <p className="text-xs theme-dashboard-muted mt-1">{app.notes}</p>}
             </div>
           )}
         </div>
