@@ -4,11 +4,20 @@ import type { DashboardMetrics, CollaboratorMetric } from '@/types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
+export type Periodo = 'semana' | 'mes' | 'trimestre'
+
 interface MetricsDashboardProps {
   dashboard: DashboardMetrics
   prevDashboard: DashboardMetrics | null
   avgProjectDays: number
   avgRevisions: number
+  periodo: Periodo
+}
+
+const PERIODO_LABEL: Record<Periodo, string> = {
+  semana:    'Últimos 7 días',
+  mes:       'Últimos 30 días',
+  trimestre: 'Últimos 90 días',
 }
 
 type StatusLevel = 'green' | 'red' | 'neutral'
@@ -36,14 +45,14 @@ const CATEGORY_LABEL = {
 
 // Tailwind classes per status — must be complete strings for the JIT scanner
 const STATUS_WRAPPER: Record<StatusLevel, string> = {
-  green:   'bg-emerald-50 border border-emerald-200/70',
-  red:     'bg-rose-50 border border-rose-200/70',
+  green:   'bg-emerald-500/10 border border-emerald-500/25',
+  red:     'bg-rose-500/10 border border-rose-500/25',
   neutral: 'theme-dashboard-card border theme-dashboard-border',
 }
 
 const STATUS_PILL: Record<StatusLevel, string> = {
-  green:   'bg-emerald-100 text-emerald-700',
-  red:     'bg-rose-100 text-rose-700',
+  green:   'bg-emerald-500/15 text-emerald-500',
+  red:     'bg-rose-500/15 text-rose-500',
   neutral: 'bg-[var(--dashboard-surface-2)] theme-dashboard-muted',
 }
 
@@ -103,7 +112,7 @@ function MetricCard({
       {subtext && (
         <p
           className={`mt-1 text-xs ${
-            status === 'red' ? 'text-rose-600 font-medium' : 'theme-dashboard-muted'
+            status === 'red' ? 'text-semantic-danger font-medium' : 'theme-dashboard-muted'
           }`}
         >
           {subtext}
@@ -113,7 +122,7 @@ function MetricCard({
       {/* Progress bar */}
       {progressPct !== undefined && (
         <div className="mt-3">
-          <div className="h-1.5 overflow-hidden rounded-full bg-black/10">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--dashboard-border)]">
             <div
               className={`h-full rounded-full transition-all duration-700 ${STATUS_BAR[status]}`}
               style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
@@ -142,9 +151,9 @@ function SpotlightCard({ performer }: { performer: CollaboratorMetric }) {
     .toUpperCase()
 
   return (
-    <article className="rounded-xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50 p-4 transition-colors">
+    <article className="rounded-xl border border-violet-500/25 bg-violet-500/10 p-4 transition-colors">
       {/* Category pill */}
-      <span className="inline-block rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-violet-700">
+      <span className="inline-block rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-widest text-semantic-violet">
         EFICIENCIA
       </span>
 
@@ -160,7 +169,7 @@ function SpotlightCard({ performer }: { performer: CollaboratorMetric }) {
           </p>
         </div>
         <div className="ml-auto shrink-0 text-right">
-          <p className="text-xl font-extrabold text-emerald-600">
+          <p className="text-xl font-extrabold text-semantic-success">
             {performer.performanceScore}
           </p>
           <p className="text-[10px] theme-dashboard-muted">score</p>
@@ -168,7 +177,7 @@ function SpotlightCard({ performer }: { performer: CollaboratorMetric }) {
       </div>
 
       {/* Stats mini-grid */}
-      <div className="mt-3 grid grid-cols-3 divide-x divide-violet-200/50 text-center">
+      <div className="mt-3 grid grid-cols-3 divide-x divide-violet-500/20 text-center">
         <div className="pr-2">
           <p className="text-sm font-bold theme-dashboard-text">{performer.completedProjects}</p>
           <p className="text-[10px] theme-dashboard-muted">completados</p>
@@ -215,6 +224,7 @@ export function MetricsDashboard({
   prevDashboard,
   avgProjectDays,
   avgRevisions,
+  periodo,
 }: MetricsDashboardProps) {
   const { business, operation, client, talent } = dashboard
   const prev = prevDashboard
@@ -263,6 +273,18 @@ export function MetricsDashboard({
 
   return (
     <div className="mb-6 space-y-6">
+      {/* ── PERIODO HEADER ──────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--dashboard-accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--dashboard-accent)] ring-1 ring-[var(--dashboard-accent)]/20">
+          {PERIODO_LABEL[periodo]}
+        </span>
+        {prevDashboard && (
+          <span className="theme-dashboard-muted text-xs">
+            · comparado con el periodo anterior equivalente
+          </span>
+        )}
+      </div>
+
       {/* ── NEGOCIO ─────────────────────────────────────────────────────────── */}
       <section>
         <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest theme-dashboard-muted">
