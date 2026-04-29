@@ -167,7 +167,7 @@ export default function AdminProyectoPage() {
   )
 
   if (error || !project) return (
-    <div className="bg-red-50 border border-red-100 rounded-xl p-6 text-red-600 text-sm">{error || 'No encontrado'}</div>
+    <div className="border border-rose-500/30 bg-rose-500/10 rounded-xl p-6 text-semantic-danger text-sm">{error || 'No encontrado'}</div>
   )
 
   const p = project
@@ -466,7 +466,7 @@ export default function AdminProyectoPage() {
             </button>
           </div>
           {designers.filter(d => (d.level || 0) >= p.minDesignerLevel).length === 0 && (
-            <p className="text-xs text-orange-500 mt-2">
+            <p className="text-xs text-semantic-warning mt-2">
               No hay diseñadores disponibles con nivel ≥ {p.minDesignerLevel}
             </p>
           )}
@@ -475,9 +475,9 @@ export default function AdminProyectoPage() {
 
       {/* Cerrar proyecto */}
       {p.status === 'aprobado' && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-green-800 mb-1">El cliente aprobó el trabajo</h2>
-          <p className="text-xs text-green-600 mb-4">
+        <div className="border border-emerald-500/30 bg-emerald-500/10 rounded-xl p-5">
+          <h2 className="text-sm font-semibold theme-dashboard-text mb-1">El cliente aprobó el trabajo</h2>
+          <p className="text-xs theme-dashboard-muted mb-4">
             Al cerrar el proyecto se registra el pago final y se liquida al diseñador por {fmt(p.pricing.designerPay)}.
           </p>
           <button
@@ -545,8 +545,8 @@ export default function AdminProyectoPage() {
 function Row({ label, value, bold, dim }: { label: string; value: string; bold?: boolean; dim?: boolean }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className={dim ? 'text-slate-500' : 'theme-dashboard-muted'}>{label}</span>
-      <span className={`${bold ? 'font-bold text-coral text-base' : dim ? 'text-slate-400' : 'theme-dashboard-text'}`}>{value}</span>
+      <span className="theme-dashboard-muted">{label}</span>
+      <span className={`${bold ? 'font-bold text-coral text-base' : dim ? 'theme-dashboard-muted' : 'theme-dashboard-text'}`}>{value}</span>
     </div>
   )
 }
