@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authApi } from '@/lib/api'
 import { saveSession, dashboardPath } from '@/lib/auth'
@@ -10,6 +10,16 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('expired') === '1') {
+      setSessionExpired(true)
+      const t = setTimeout(() => setSessionExpired(false), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +49,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white mb-1">Accede a tu cuenta</h1>
           <p className="text-slate-300 text-sm">SAPIENS COLAB · Plataforma de proyectos</p>
         </div>
+
+        {sessionExpired && (
+          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300 text-sm">
+            Tu sesión expiró, inicia sesión de nuevo.
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-coral/10 border border-coral/30 rounded-lg text-coral text-sm">

@@ -1,5 +1,7 @@
 // ─── SAPIENS COLAB — API client ────────────────────────────────────────────
 
+import { clearSession } from '@/lib/auth'
+
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 function getToken(): string | null {
@@ -18,6 +20,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   })
   const data = await res.json()
+
+  if (res.status === 401) {
+    clearSession()
+    if (typeof window !== 'undefined') {
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+      window.location.replace(`/login?redirect=${redirect}&expired=1`)
+    }
+    throw new Error('session_expired')
+  }
+
   if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
   return data as T
 }
