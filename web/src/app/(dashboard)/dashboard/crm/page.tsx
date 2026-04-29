@@ -52,6 +52,9 @@ export default function CrmPage() {
   const [taskDraftById, setTaskDraftById] = useState<Record<string, string>>({})
   const [taskDueDateById, setTaskDueDateById] = useState<Record<string, string>>({})
   const [toast, setToast] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterService, setFilterService] = useState('')
+  const [filterScore, setFilterScore] = useState<'all' | 'high' | 'medium'>('all')
 
   const money = (value: number) => `$${value.toLocaleString('es-CO')}`
 
@@ -79,6 +82,28 @@ export default function CrmPage() {
     return () => clearTimeout(timer)
   }, [toast])
 
+  const serviceTypes = useMemo(() =>
+    [...new Set(quotes.map((q) => q.serviceType).filter(Boolean))].sort()
+  , [quotes])
+
+  const filteredQuotes = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    return quotes.filter((quote) => {
+      if (q) {
+        const name = (quote.client.name || '').toLowerCase()
+        const company = (quote.client.company || '').toLowerCase()
+        const email = (quote.client.email || '').toLowerCase()
+        if (!name.includes(q) && !company.includes(q) && !email.includes(q)) return false
+      }
+      if (filterService && quote.serviceType !== filterService) return false
+      if (filterScore === 'high' && (quote.leadScore ?? 0) < 70) return false
+      if (filterScore === 'medium' && ((quote.leadScore ?? 0) < 40 || (quote.leadScore ?? 0) >= 70)) return false
+      return true
+    })
+  }, [quotes, searchQuery, filterService, filterScore])
+
+  const hasFilters = searchQuery !== '' || filterService !== '' || filterScore !== 'all'
+
   const quotesByStage = useMemo(() => {
     const grouped: Record<LeadStage, Quote[]> = {
       NUEVO: [],
@@ -89,13 +114,13 @@ export default function CrmPage() {
       CERRADO_PERDIDO: [],
     }
 
-    for (const quote of quotes) {
+    for (const quote of filteredQuotes) {
       const stage = quote.stage || 'NUEVO'
       grouped[stage].push(quote)
     }
 
     return grouped
-  }, [quotes])
+  }, [filteredQuotes])
 
   // Contadores derivados del estado local — siempre en sync con las tarjetas
   const leadsByStage = useMemo(() => {
@@ -103,9 +128,9 @@ export default function CrmPage() {
       NUEVO: 0, CONTACTO_INICIAL: 0, PROPUESTA_ENVIADA: 0,
       NEGOCIACION: 0, CERRADO_GANADO: 0, CERRADO_PERDIDO: 0,
     }
-    for (const quote of quotes) counts[quote.stage || 'NUEVO']++
+    for (const quote of filteredQuotes) counts[quote.stage || 'NUEVO']++
     return counts
-  }, [quotes])
+  }, [filteredQuotes])
 
   function onDragStart(quoteId: string) {
     setDraggingQuoteId(quoteId)
@@ -220,11 +245,56 @@ export default function CrmPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="theme-dashboard-muted text-xs uppercase tracking-[0.2em]">CRM Comercial</p>
-          <h1 className="theme-dashboard-text text-2xl font-semibold">Pipeline de Leads</h1>
-          <p className="theme-dashboard-muted mt-1 text-sm">Gestiona el avance comercial desde cotizacion hasta cierre.</p>
+      <header className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="theme-dashboard-muted text-xs uppercase tracking-[0.2em]">CRM Comercial</p>
+            <h1 className="theme-dashboard-text text-2xl font-semibold">Pipeline de Leads</h1>
+            <p className="theme-dashboard-muted mt-1 text-sm">Gestiona el avance comercial desde cotizacion hasta cierre.</p>
+          </div>
+        </div>
+
+        {/* Barra de filtros */}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            placeholder="Buscar por nombre, empresa o email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="theme-dashboard-input min-w-[220px] flex-1 rounded-lg px-3 py-2 text-sm outline-none focus:border-[color:var(--dashboard-accent)]"
+          />
+          <select
+            value={filterService}
+            onChange={(e) => setFilterService(e.target.value)}
+            className="theme-dashboard-input rounded-lg px-3 py-2 text-sm outline-none focus:border-[color:var(--dashboard-accent)]"
+          >
+            <option value="">Todos los servicios</option>
+            {serviceTypes.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={filterScore}
+            onChange={(e) => setFilterScore(e.target.value as 'all' | 'high' | 'medium')}
+            className="theme-dashboard-input rounded-lg px-3 py-2 text-sm outline-none focus:border-[color:var(--dashboard-accent)]"
+          >
+            <option value="all">Todos los scores</option>
+            <option value="high">Score alto (≥70)</option>
+            <option value="medium">Score medio (40-69)</option>
+          </select>
+          {hasFilters && (
+            <button
+              onClick={() => { setSearchQuery(''); setFilterService(''); setFilterScore('all') }}
+              className="rounded-lg border theme-dashboard-border theme-dashboard-muted px-3 py-2 text-sm hover:theme-dashboard-text transition-colors"
+            >
+              Limpiar filtros
+            </button>
+          )}
+          {hasFilters && (
+            <span className="theme-dashboard-muted text-xs">
+              {filteredQuotes.length} de {quotes.length} leads
+            </span>
+          )}
         </div>
       </header>
 
