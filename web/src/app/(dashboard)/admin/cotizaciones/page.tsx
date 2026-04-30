@@ -64,6 +64,7 @@ function buildWhatsAppUrl(quote: Quote): string {
     `• Anticipo requerido (50%): ${fmt(pricing.anticipo)}`,
     `• Saldo al cierre: ${fmt(pricing.balance)}`,
     ``,
+    `*Vigencia: 15 días*`,
     `Ref: ${_id}`,
   ]
   const text = encodeURIComponent(lines.join('\n'))
