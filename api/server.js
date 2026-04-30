@@ -31,6 +31,7 @@ const WebSocket = require('ws');
 const connectDB = require('./src/config/db');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ─── WebSocket ───────────────────────────────────────────────
