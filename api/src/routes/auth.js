@@ -50,6 +50,8 @@ router.post('/login', loginLimit, async (req, res) => {
 
     // Admins requieren 2FA: enviar OTP y devolver token temporal (sin JWT real)
     if (user.role === 'admin') {
+      if (process.env.DISABLE_2FA === 'true')
+        return res.json({ token: signToken(user), user: user.toSafeJSON() });
       const otp = otpStore.set(user._id);
       try {
         await sendOtpEmail(user.email, otp);
