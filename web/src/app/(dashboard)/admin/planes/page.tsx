@@ -130,7 +130,7 @@ export default function PlanesPage() {
 
       {/* Métricas mensuales */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-        <MetricCard label="Facturación bruta" value={cop(totales.facturacionBruta)} color="blue" />
+        <MetricCard label="Facturación bruta" value={cop(totales.facturacionBruta)} color="blue" textClass="text-foreground" />
         <MetricCard
           label="Retenciones totales"
           value={cop(totales.retenciones)}
@@ -243,12 +243,13 @@ function SliderField({
 }
 
 function MetricCard({
-  label, value, color, sub,
+  label, value, color, sub, textClass,
 }: {
   label: string
   value: string
   color: 'emerald' | 'amber' | 'rose' | 'blue'
   sub?: string
+  textClass?: string
 }) {
   const bg   = {
     emerald: 'bg-emerald-500/10 border-emerald-500/30',
@@ -257,15 +258,15 @@ function MetricCard({
     blue:    'bg-[#4C58FF]/10 border-[#4C58FF]/30',
   }
   const text = {
-    emerald: 'text-emerald-400',
-    amber:   'text-semantic-warning',
+    emerald: 'text-green-400 dark:text-green-300',
+    amber:   'text-yellow-400 dark:text-yellow-300',
     rose:    'text-semantic-danger',
-    blue:    'text-[#A5B4FC]',
+    blue:    'text-blue-400 dark:text-blue-300',
   }
   return (
     <div className={`rounded-xl border p-4 ${bg[color]}`}>
       <div className="theme-dashboard-muted text-xs mb-1 leading-tight">{label}</div>
-      <div className={`text-base font-bold font-mono leading-tight ${text[color]}`}>{value}</div>
+      <div className={`text-base font-bold font-mono leading-tight ${textClass ?? text[color]}`}>{value}</div>
       {sub && <div className="theme-dashboard-muted text-xs mt-1 opacity-60">{sub}</div>}
     </div>
   )
