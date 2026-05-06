@@ -60,17 +60,14 @@ app.locals.notifyUser = (userId, payload) => {
 
 // ─── Middleware ───────────────────────────────────────────────
 app.use(helmet());
-const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'https://sapiens-colab-web-crx9.vercel.app'];
-const envOrigins = String(process.env.WEB_URL || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const allowedOrigins = new Set([...defaultOrigins, ...envOrigins]);
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000'];
 
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.has(origin)) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     // Permitir cualquier subdominio de vercel.app y onrender.com
     if (/\.vercel\.app$/.test(origin) || /\.onrender\.com$/.test(origin)) {
       return callback(null, true);

@@ -13,6 +13,11 @@ const ActivityLog = require('../models/ActivityLog')
 const { calcular } = require('./cotizador')
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ seed bloqueado en producción')
+    process.exit(1)
+  }
+
   await mongoose.connect(process.env.MONGODB_URI, { dbName: 'sapiens-colab' })
   console.log('✅ MongoDB conectado')
 
