@@ -99,8 +99,9 @@ app.use('/api/services', require('./src/routes/services'));
 app.use('/api/quotes',   require('./src/routes/quotes'));
 app.use('/api/applications', require('./src/routes/applications'));
 app.use('/api/upload',      require('./src/routes/upload'));
-app.use('/api/metrics',  require('./src/routes/metrics'));
-app.use('/api/billing',  require('./src/routes/billing'));
+app.use('/api/metrics',    require('./src/routes/metrics'));
+app.use('/api/dashboard',  require('./src/routes/dashboard'));
+app.use('/api/billing',    require('./src/routes/billing'));
 app.use('/api/v1',       require('./src/app/api/v1/router'));
 
 // Health check

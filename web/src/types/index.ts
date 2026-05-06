@@ -376,6 +376,24 @@ export interface PerformanceMetrics {
   }
 }
 
+export interface DashboardStats {
+  operation: {
+    activeProjects: number
+    completionRatePct: number | null
+    onTimeRatePct: number | null
+  }
+  clients: {
+    satisfactionAvg: number | null
+    repurchaseRatePct: number | null
+    avgRevisions: number | null
+  }
+  team: {
+    topCollaborator: string | null
+    avgDeliveryDays: number | null
+    projectsPerDesigner: number | null
+  }
+}
+
 export interface FinanceMetrics {
   period: { from: string; to: string }
   business: {

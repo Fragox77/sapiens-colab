@@ -162,6 +162,11 @@ function buildQuery(params?: { from?: string; to?: string }) {
   return `?${new URLSearchParams(entries as [string, string][]).toString()}`
 }
 
+export const dashboardApi = {
+  stats: (params?: { from?: string; to?: string }) =>
+    api.get<import('@/types').DashboardStats>(`/api/dashboard/stats${buildQuery(params)}`),
+}
+
 export const metricsApi = {
   dashboard: (params?: { from?: string; to?: string }) => {
     return api.get<import('@/types').DashboardMetrics>(`/api/metrics/dashboard${buildQuery(params)}`)

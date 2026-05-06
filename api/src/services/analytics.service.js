@@ -425,8 +425,141 @@ async function getFinanceMetrics(query = {}) {
   };
 }
 
+async function getDashboardStats(query = {}) {
+  const range = parseDateRange(query);
+
+  const [
+    statusAgg, lateAgg, revsAgg,
+    topDesignerAgg, avgDaysAgg,
+    satisfactionAgg, repurchaseAgg, activeDesignersAgg,
+  ] = await Promise.all([
+    // 1. Status distribution (date-ranged by createdAt)
+    Project.aggregate([
+      { $match: matchByRange('createdAt', range) },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    // 2. On-time delivery (completed projects with deadlines)
+    Project.aggregate([
+      {
+        $match: {
+          status: 'completado',
+          deadlineAt: { $ne: null },
+          completedAt: { $ne: null },
+          ...matchByRange('completedAt', range),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          onTime: { $sum: { $cond: [{ $lte: ['$completedAt', '$deadlineAt'] }, 1, 0] } },
+          total:  { $sum: 1 },
+        },
+      },
+    ]),
+    // 3. Avg revisions for completed projects
+    Project.aggregate([
+      { $match: { status: 'completado', ...matchByRange('completedAt', range) } },
+      { $group: { _id: null, avg: { $avg: '$revisions.used' } } },
+    ]),
+    // 4. Top collaborator (most completed projects in period)
+    Project.aggregate([
+      {
+        $match: {
+          status: 'completado',
+          $or: [{ designer: { $ne: null } }, { assignedTo: { $ne: null } }],
+          ...matchByRange('completedAt', range),
+        },
+      },
+      { $addFields: { designerRef: { $ifNull: ['$assignedTo', '$designer'] } } },
+      { $group: { _id: '$designerRef', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'u' } },
+      { $unwind: '$u' },
+      { $project: { _id: 0, name: '$u.name' } },
+    ]),
+    // 5. Global avg delivery days (creation → completion)
+    Project.aggregate([
+      {
+        $match: {
+          status: 'completado',
+          completedAt: { $ne: null },
+          ...matchByRange('completedAt', range),
+        },
+      },
+      {
+        $addFields: {
+          startRef: { $ifNull: ['$startedAt', { $ifNull: ['$payments.anticipo.paidAt', '$createdAt'] }] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgDays: { $avg: { $divide: [{ $subtract: ['$completedAt', '$startRef'] }, 86400000] } },
+        },
+      },
+    ]),
+    // 6. Satisfaction from Feedback model
+    Feedback.aggregate([
+      { $match: matchByRange('createdAt', range) },
+      { $group: { _id: null, avg: { $avg: '$rating' } } },
+    ]),
+    // 7. Repurchase rate (clients with >1 completed project)
+    Project.aggregate([
+      { $match: { status: 'completado', ...matchByRange('completedAt', range) } },
+      { $project: { clientRef: { $ifNull: ['$clientId', '$client'] } } },
+      { $group: { _id: '$clientRef', n: { $sum: 1 } } },
+      { $group: { _id: null, total: { $sum: 1 }, repeat: { $sum: { $cond: [{ $gt: ['$n', 1] }, 1, 0] } } } },
+    ]),
+    // 8. Currently active designers (point-in-time)
+    Project.aggregate([
+      {
+        $match: {
+          status: { $in: ['activo', 'revision', 'ajuste', 'aprobado'] },
+          $or: [{ designer: { $ne: null } }, { assignedTo: { $ne: null } }],
+        },
+      },
+      { $addFields: { designerRef: { $ifNull: ['$assignedTo', '$designer'] } } },
+      { $group: { _id: '$designerRef' } },
+      { $count: 'n' },
+    ]),
+  ]);
+
+  const statusMap = statusAgg.reduce((acc, { _id, count }) => { acc[_id] = count; return acc; }, {});
+  const totalProjects  = Object.values(statusMap).reduce((s, n) => s + n, 0);
+  const completedCount = statusMap.completado || 0;
+  const activeProjects = ['activo', 'revision', 'ajuste', 'aprobado'].reduce((s, k) => s + (statusMap[k] || 0), 0);
+
+  const late           = lateAgg[0]        || null;
+  const revs           = revsAgg[0]        || null;
+  const topDesigner    = topDesignerAgg[0] || null;
+  const avgDays        = avgDaysAgg[0]     || null;
+  const sat            = satisfactionAgg[0]  || null;
+  const rep            = repurchaseAgg[0]    || null;
+  const activeDesignerCount = activeDesignersAgg[0]?.n || 0;
+
+  return {
+    operation: {
+      activeProjects,
+      completionRatePct: totalProjects > 0 ? round((completedCount / totalProjects) * 100, 1) : null,
+      onTimeRatePct:     late ? round((late.onTime / late.total) * 100, 1) : null,
+    },
+    clients: {
+      satisfactionAvg:    sat ? round(sat.avg, 1) : null,
+      repurchaseRatePct:  rep && rep.total > 0 ? round((rep.repeat / rep.total) * 100, 1) : null,
+      avgRevisions:       revs ? round(revs.avg, 1) : null,
+    },
+    team: {
+      topCollaborator:      topDesigner?.name || null,
+      avgDeliveryDays:      avgDays ? round(avgDays.avgDays, 1) : null,
+      projectsPerDesigner:  activeDesignerCount > 0 ? round(activeProjects / activeDesignerCount, 1) : null,
+    },
+  };
+}
+
 module.exports = {
   getDashboardMetrics,
   getPerformanceMetrics,
   getFinanceMetrics,
+  getDashboardStats,
 };

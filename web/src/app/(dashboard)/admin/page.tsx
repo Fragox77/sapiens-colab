@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { adminApi, metricsApi, projectsApi } from '@/lib/api'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { adminApi, dashboardApi, metricsApi, projectsApi } from '@/lib/api'
 import { TemplateOverviewChart, TemplateRadialBreakdown } from '@/components/ui/template/Charts'
 import { CollaboratorRanking } from '@/components/dashboard/CollaboratorRanking'
-import { MetricsDashboard, type Periodo } from '@/components/dashboard/MetricsDashboard'
-import type { DashboardMetrics, Project, User } from '@/types'
+import type { DashboardMetrics, DashboardStats, Project, User } from '@/types'
 
 type Preset = '7d' | '30d' | '90d' | 'custom'
 type Range = { from: Date; to: Date }
@@ -35,8 +34,8 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [designers, setDesigners] = useState<User[]>([])
   const [dashboard, setDashboard] = useState<DashboardMetrics | null>(null)
-
   const [prevDashboard, setPrevDashboard] = useState<DashboardMetrics | null>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [metricsLoading, setMetricsLoading] = useState(true)
@@ -60,23 +59,24 @@ export default function AdminDashboard() {
   async function loadMetrics(range: Range) {
     setMetricsLoading(true)
     setMetricsError('')
+    setStats(null)
     const prevRange = previousRange(range)
 
     try {
-      const [mResult, mPrevResult] = await Promise.allSettled([
+      const [mResult, mPrevResult, sResult] = await Promise.allSettled([
         metricsApi.dashboard({ from: range.from.toISOString(), to: range.to.toISOString() }),
         metricsApi.dashboard({ from: prevRange.from.toISOString(), to: prevRange.to.toISOString() }),
+        dashboardApi.stats({ from: range.from.toISOString(), to: range.to.toISOString() }),
       ])
 
       if (mResult.status === 'fulfilled') {
         setDashboard(mResult.value)
       } else {
-        setMetricsError(mResult.reason instanceof Error ? mResult.reason.message : 'No se pudieron cargar las metricas.')
+        setMetricsError(mResult.reason instanceof Error ? mResult.reason.message : 'No se pudieron cargar las métricas.')
       }
 
-      if (mPrevResult.status === 'fulfilled') {
-        setPrevDashboard(mPrevResult.value)
-      }
+      if (mPrevResult.status === 'fulfilled') setPrevDashboard(mPrevResult.value)
+      if (sResult.status === 'fulfilled') setStats(sResult.value)
     } finally {
       setMetricsLoading(false)
     }
@@ -111,25 +111,8 @@ export default function AdminDashboard() {
     }
   }
 
-  const periodo: Periodo = preset === '7d' ? 'semana' : preset === '90d' ? 'trimestre' : 'mes'
-
   const pending = projects.filter(p => p.status === 'cotizado')
   const active = projects.filter(p => ['activo', 'revision', 'ajuste'].includes(p.status))
-  const avgRevisions = projects.length > 0
-    ? Math.round((projects.reduce((sum, p) => sum + (p.revisions?.used || 0), 0) / projects.length) * 10) / 10
-    : 0
-  const completedDurations = projects
-    .filter((p) => Boolean(p.completedAt))
-    .map((p) => {
-      const start = new Date(p.createdAt).getTime()
-      const end = new Date(p.completedAt as string).getTime()
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
-      return (end - start) / (1000 * 60 * 60 * 24)
-    })
-    .filter((days): days is number => days !== null)
-  const avgProjectDays = completedDurations.length > 0
-    ? Math.round((completedDurations.reduce((sum, d) => sum + d, 0) / completedDurations.length) * 10) / 10
-    : 0
 
   return (
     <div>
@@ -174,6 +157,40 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Tarjetas compactas de métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <StatCard
+          title="Operación"
+          icon={<IconBriefcase />}
+          loading={metricsLoading}
+          metrics={[
+            { label: 'Proyectos activos', value: stats ? String(stats.operation.activeProjects) : null },
+            { label: 'Tasa de finalización', value: stats?.operation.completionRatePct != null ? `${stats.operation.completionRatePct}%` : null },
+            { label: 'Entrega a tiempo', value: stats?.operation.onTimeRatePct != null ? `${stats.operation.onTimeRatePct}%` : null },
+          ]}
+        />
+        <StatCard
+          title="Clientes"
+          icon={<IconUsers />}
+          loading={metricsLoading}
+          metrics={[
+            { label: 'Satisfacción', value: stats?.clients.satisfactionAvg != null ? `${stats.clients.satisfactionAvg}/5` : null },
+            { label: 'Tasa de recompra', value: stats?.clients.repurchaseRatePct != null ? `${stats.clients.repurchaseRatePct}%` : null },
+            { label: 'Revisiones/proyecto', value: stats?.clients.avgRevisions != null ? String(stats.clients.avgRevisions) : null },
+          ]}
+        />
+        <StatCard
+          title="Eficiencia del equipo"
+          icon={<IconTrendingUp />}
+          loading={metricsLoading}
+          metrics={[
+            { label: 'Top colaborador', value: stats?.team.topCollaborator ?? null },
+            { label: 'Tiempo promedio', value: stats?.team.avgDeliveryDays != null ? `${stats.team.avgDeliveryDays} días` : null },
+            { label: 'Proy. por diseñador', value: stats?.team.projectsPerDesigner != null ? String(stats.team.projectsPerDesigner) : null },
+          ]}
+        />
+      </div>
+
       {(loading || metricsLoading) ? (
         <div className="theme-dashboard-muted text-sm">Cargando métricas...</div>
       ) : (
@@ -182,16 +199,6 @@ export default function AdminDashboard() {
             <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-semantic-danger">
               {metricsError}
             </div>
-          )}
-
-          {dashboard && (
-            <MetricsDashboard
-              dashboard={dashboard}
-              prevDashboard={prevDashboard}
-              avgProjectDays={avgProjectDays}
-              avgRevisions={avgRevisions}
-              periodo={periodo}
-            />
           )}
 
           {dashboard && (
@@ -293,3 +300,60 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+// ── Subcomponentes ─────────────────────────────────────────────────────────────
+
+function StatCard({
+  title, icon, metrics, loading,
+}: {
+  title: string
+  icon: ReactNode
+  metrics: { label: string; value: string | null }[]
+  loading: boolean
+}) {
+  return (
+    <div className="theme-dashboard-surface theme-dashboard-border border rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b theme-dashboard-border">
+        <span className="text-[#4C58FF]">{icon}</span>
+        <h3 className="theme-dashboard-text text-sm font-semibold">{title}</h3>
+      </div>
+      <div className="grid grid-cols-3 gap-x-2 gap-y-3">
+        {metrics.map(({ label, value }) => (
+          <div key={label} className="min-w-0">
+            <p className="theme-dashboard-muted text-[11px] leading-snug mb-1.5 h-8 overflow-hidden">{label}</p>
+            {loading ? (
+              <div className="h-6 w-3/4 rounded-md bg-current opacity-10 animate-pulse" />
+            ) : (
+              <p className="theme-dashboard-text text-base font-bold leading-tight truncate" title={value ?? '—'}>
+                {value ?? '—'}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const IconBriefcase = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+  </svg>
+)
+
+const IconUsers = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+
+const IconTrendingUp = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+    <polyline points="17 6 23 6 23 12"/>
+  </svg>
+)
