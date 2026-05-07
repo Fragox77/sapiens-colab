@@ -1,53 +1,29 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
 import { quotesApi } from '@/lib/api'
 import type { CrmKpis, CrmTimeline, LeadStage, Quote } from '@/types'
 
 const STAGES: Array<{ id: LeadStage; label: string; hint: string; accent: string }> = [
-  { id: 'NUEVO', label: 'Nuevo', hint: 'Lead recien capturado', accent: 'from-cyan-500/20 to-cyan-400/5' },
-  { id: 'CONTACTO_INICIAL', label: 'Contacto inicial', hint: 'Primera conversacion activa', accent: 'from-blue-500/20 to-blue-400/5' },
-  { id: 'PROPUESTA_ENVIADA', label: 'Propuesta enviada', hint: 'Oferta economica entregada', accent: 'from-violet-500/20 to-violet-400/5' },
-  { id: 'NEGOCIACION', label: 'Negociacion', hint: 'Ajuste de alcance y condiciones', accent: 'from-amber-500/20 to-amber-400/5' },
-  { id: 'CERRADO_GANADO', label: 'Cerrado ganado', hint: 'Convertido a cliente', accent: 'from-emerald-500/20 to-emerald-400/5' },
-  { id: 'CERRADO_PERDIDO', label: 'Cerrado perdido', hint: 'No avanza en este ciclo', accent: 'from-rose-500/20 to-rose-400/5' },
+  { id: 'NUEVO',            label: 'Nuevo',            hint: 'Lead recien capturado',          accent: 'from-cyan-500/20 to-cyan-400/5' },
+  { id: 'CONTACTO_INICIAL', label: 'Contacto inicial', hint: 'Primera conversacion activa',     accent: 'from-blue-500/20 to-blue-400/5' },
+  { id: 'PROPUESTA_ENVIADA',label: 'Propuesta enviada',hint: 'Oferta economica entregada',     accent: 'from-violet-500/20 to-violet-400/5' },
+  { id: 'NEGOCIACION',      label: 'Negociacion',      hint: 'Ajuste de alcance y condiciones', accent: 'from-amber-500/20 to-amber-400/5' },
+  { id: 'CERRADO_GANADO',   label: 'Cerrado ganado',   hint: 'Convertido a cliente',            accent: 'from-emerald-500/20 to-emerald-400/5' },
+  { id: 'CERRADO_PERDIDO',  label: 'Cerrado perdido',  hint: 'No avanza en este ciclo',         accent: 'from-rose-500/20 to-rose-400/5' },
 ]
 
 const EMPTY_KPIS: CrmKpis = {
-  totalLeads: 0,
-  wonLeads: 0,
-  conversionRate: 0,
-  pipelineValue: 0,
-  pendingTasks: 0,
-  overdueTasks: 0,
-  stalledLeads: 0,
-  slaComplianceRate: 100,
-  leadsByStage: {
-    NUEVO: 0,
-    CONTACTO_INICIAL: 0,
-    PROPUESTA_ENVIADA: 0,
-    NEGOCIACION: 0,
-    CERRADO_GANADO: 0,
-    CERRADO_PERDIDO: 0,
-  },
+  totalLeads: 0, wonLeads: 0, conversionRate: 0, pipelineValue: 0,
+  pendingTasks: 0, overdueTasks: 0, stalledLeads: 0, slaComplianceRate: 100,
+  leadsByStage: { NUEVO: 0, CONTACTO_INICIAL: 0, PROPUESTA_ENVIADA: 0, NEGOCIACION: 0, CERRADO_GANADO: 0, CERRADO_PERDIDO: 0 },
   agingByStage: {
-    NUEVO: { count: 0, avgDays: 0, maxDays: 0 },
+    NUEVO:            { count: 0, avgDays: 0, maxDays: 0 },
     CONTACTO_INICIAL: { count: 0, avgDays: 0, maxDays: 0 },
-    PROPUESTA_ENVIADA: { count: 0, avgDays: 0, maxDays: 0 },
-    NEGOCIACION: { count: 0, avgDays: 0, maxDays: 0 },
-    CERRADO_GANADO: { count: 0, avgDays: 0, maxDays: 0 },
-    CERRADO_PERDIDO: { count: 0, avgDays: 0, maxDays: 0 },
+    PROPUESTA_ENVIADA:{ count: 0, avgDays: 0, maxDays: 0 },
+    NEGOCIACION:      { count: 0, avgDays: 0, maxDays: 0 },
+    CERRADO_GANADO:   { count: 0, avgDays: 0, maxDays: 0 },
+    CERRADO_PERDIDO:  { count: 0, avgDays: 0, maxDays: 0 },
   },
   alerts: [],
 }
@@ -55,12 +31,7 @@ const EMPTY_KPIS: CrmKpis = {
 // ─── Kanban primitives ────────────────────────────────────────────────────────
 
 function KanbanColumn({
-  stageId,
-  accent,
-  label,
-  hint,
-  count,
-  children,
+  stageId, accent, label, hint, count, children, isOver, onDragOver, onDrop, onDragEnter, onDragLeave,
 }: {
   stageId: LeadStage
   accent: string
@@ -68,12 +39,18 @@ function KanbanColumn({
   hint: string
   count: number
   children: React.ReactNode
+  isOver: boolean
+  onDragOver: (e: React.DragEvent) => void
+  onDrop: (e: React.DragEvent) => void
+  onDragEnter: () => void
+  onDragLeave: (e: React.DragEvent) => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stageId })
-
   return (
     <div
-      ref={setNodeRef}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
       className={`w-[330px] shrink-0 rounded-2xl border p-3 transition-colors ${
         isOver
           ? 'border-[color:var(--dashboard-accent)] bg-[var(--dashboard-accent)]/5'
@@ -95,47 +72,30 @@ function KanbanColumn({
 }
 
 function KanbanCard({
-  quoteId,
-  disabled,
-  children,
+  quoteId, disabled, isDragging, onDragStart, onDragEnd, children,
 }: {
   quoteId: string
   disabled: boolean
+  isDragging: boolean
+  onDragStart: (e: React.DragEvent) => void
+  onDragEnd: () => void
   children: React.ReactNode
 }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
-    id: quoteId,
-    disabled,
-  })
-
   return (
     <article
-      ref={setNodeRef}
+      draggable={!disabled}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       className={`theme-dashboard-card rounded-xl border p-3 shadow-sm transition hover:border-[color:var(--dashboard-accent)] ${
         isDragging ? 'opacity-40' : ''
       }`}
     >
-      {/* Handle de arrastre — setActivatorNodeRef registra este nodo como activador */}
-      <div
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className="mb-2 flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
-        title="Mover lead"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          className="theme-dashboard-muted opacity-40"
-          fill="currentColor"
-        >
-          <circle cx="3" cy="3" r="1.2" />
-          <circle cx="9" cy="3" r="1.2" />
-          <circle cx="3" cy="6" r="1.2" />
-          <circle cx="9" cy="6" r="1.2" />
-          <circle cx="3" cy="9" r="1.2" />
-          <circle cx="9" cy="9" r="1.2" />
+      {/* Handle decorativo — arrastrar desde cualquier zona de la card */}
+      <div className="mb-2 flex cursor-grab items-center gap-1.5 active:cursor-grabbing">
+        <svg width="12" height="12" viewBox="0 0 12 12" className="theme-dashboard-muted opacity-40" fill="currentColor">
+          <circle cx="3" cy="3" r="1.2" /><circle cx="9" cy="3" r="1.2" />
+          <circle cx="3" cy="6" r="1.2" /><circle cx="9" cy="6" r="1.2" />
+          <circle cx="3" cy="9" r="1.2" /><circle cx="9" cy="9" r="1.2" />
         </svg>
         <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide opacity-40 select-none">
           arrastrar
@@ -149,26 +109,24 @@ function KanbanCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CrmPage() {
-  const [quotes, setQuotes] = useState<Quote[]>([])
-  const [kpis, setKpis] = useState<CrmKpis>(EMPTY_KPIS)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [quotes, setQuotes]           = useState<Quote[]>([])
+  const [kpis, setKpis]               = useState<CrmKpis>(EMPTY_KPIS)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState('')
   const [draggingQuoteId, setDraggingQuoteId] = useState<string | null>(null)
-  const [savingQuoteId, setSavingQuoteId] = useState<string | null>(null)
+  const [savingQuoteId, setSavingQuoteId]     = useState<string | null>(null)
+  const [dragOverStage, setDragOverStage]     = useState<LeadStage | null>(null)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  )
-  const [noteDraftById, setNoteDraftById] = useState<Record<string, string>>({})
-  const [taskDraftById, setTaskDraftById] = useState<Record<string, string>>({})
+  const [noteDraftById, setNoteDraftById]     = useState<Record<string, string>>({})
+  const [taskDraftById, setTaskDraftById]     = useState<Record<string, string>>({})
   const [taskDueDateById, setTaskDueDateById] = useState<Record<string, string>>({})
-  const [toast, setToast] = useState('')
+  const [toast, setToast]             = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterService, setFilterService] = useState('')
+  const [filterService, setFilterService]     = useState('')
   const [filterScore, setFilterScore] = useState<'all' | 'high' | 'medium'>('all')
 
-  const containerRef = useRef<HTMLElement>(null)
-  const topScrollRef = useRef<HTMLDivElement>(null)
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const topScrollRef  = useRef<HTMLDivElement>(null)
   const [mirrorWidth, setMirrorWidth] = useState(0)
 
   useEffect(() => {
@@ -184,8 +142,7 @@ export default function CrmPage() {
   const money = (value: number) => `$${value.toLocaleString('es-CO')}`
 
   async function loadCrm() {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const [quoteRes, kpiRes] = await Promise.all([quotesApi.list(), quotesApi.crmKpis()])
       setQuotes(quoteRes.data)
@@ -197,9 +154,7 @@ export default function CrmPage() {
     }
   }
 
-  useEffect(() => {
-    loadCrm()
-  }, [])
+  useEffect(() => { loadCrm() }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -215,13 +170,13 @@ export default function CrmPage() {
     const q = searchQuery.toLowerCase().trim()
     return quotes.filter((quote) => {
       if (q) {
-        const name = (quote.client.name || '').toLowerCase()
+        const name    = (quote.client.name    || '').toLowerCase()
         const company = (quote.client.company || '').toLowerCase()
-        const email = (quote.client.email || '').toLowerCase()
+        const email   = (quote.client.email   || '').toLowerCase()
         if (!name.includes(q) && !company.includes(q) && !email.includes(q)) return false
       }
       if (filterService && quote.serviceType !== filterService) return false
-      if (filterScore === 'high' && (quote.leadScore ?? 0) < 70) return false
+      if (filterScore === 'high'   && (quote.leadScore ?? 0) < 70) return false
       if (filterScore === 'medium' && ((quote.leadScore ?? 0) < 40 || (quote.leadScore ?? 0) >= 70)) return false
       return true
     })
@@ -231,23 +186,15 @@ export default function CrmPage() {
 
   const quotesByStage = useMemo(() => {
     const grouped: Record<LeadStage, Quote[]> = {
-      NUEVO: [],
-      CONTACTO_INICIAL: [],
-      PROPUESTA_ENVIADA: [],
-      NEGOCIACION: [],
-      CERRADO_GANADO: [],
-      CERRADO_PERDIDO: [],
+      NUEVO: [], CONTACTO_INICIAL: [], PROPUESTA_ENVIADA: [],
+      NEGOCIACION: [], CERRADO_GANADO: [], CERRADO_PERDIDO: [],
     }
-
     for (const quote of filteredQuotes) {
-      const stage = quote.stage || 'NUEVO'
-      grouped[stage].push(quote)
+      grouped[quote.stage || 'NUEVO'].push(quote)
     }
-
     return grouped
   }, [filteredQuotes])
 
-  // Contadores derivados del estado local — siempre en sync con las tarjetas
   const leadsByStage = useMemo(() => {
     const counts: Record<LeadStage, number> = {
       NUEVO: 0, CONTACTO_INICIAL: 0, PROPUESTA_ENVIADA: 0,
@@ -257,24 +204,11 @@ export default function CrmPage() {
     return counts
   }, [filteredQuotes])
 
-  function handleDragStart({ active }: DragStartEvent) {
-    setDraggingQuoteId(active.id as string)
-  }
+  // ── Drag & drop (HTML5 nativo) ──────────────────────────────────────────────
 
-  async function handleDragEnd({ active, over }: DragEndEvent) {
-    const quoteId = active.id as string
-    const nextStage = over?.id as LeadStage | undefined
-
-    if (!nextStage) {
-      setDraggingQuoteId(null)
-      return
-    }
-
+  async function handleMoveCard(quoteId: string, nextStage: LeadStage) {
     const current = quotes.find((q) => q._id === quoteId)
-    if (!current || (current.stage || 'NUEVO') === nextStage) {
-      setDraggingQuoteId(null)
-      return
-    }
+    if (!current || (current.stage || 'NUEVO') === nextStage) return
 
     const snapshot = quotes
     setQuotes((prev) => prev.map((q) => (q._id === quoteId ? { ...q, stage: nextStage } : q)))
@@ -291,14 +225,14 @@ export default function CrmPage() {
       setToast(err instanceof Error ? err.message : 'No se pudo mover el lead')
     } finally {
       setSavingQuoteId(null)
-      setDraggingQuoteId(null)
     }
   }
+
+  // ── Notas y tareas ──────────────────────────────────────────────────────────
 
   async function addNote(quoteId: string) {
     const message = (noteDraftById[quoteId] || '').trim()
     if (!message) return
-
     setSavingQuoteId(quoteId)
     try {
       const response = await quotesApi.addNote(quoteId, message)
@@ -315,15 +249,7 @@ export default function CrmPage() {
   function applyTimelineToQuote(quoteId: string, timeline: Pick<CrmTimeline, 'tasks' | 'activities' | 'notes'>) {
     setQuotes((prev) => prev.map((q) => (
       q._id === quoteId
-        ? {
-            ...q,
-            crm: {
-              ...(q.crm || {}),
-              tasks: timeline.tasks || [],
-              activities: timeline.activities || [],
-              notes: timeline.notes || [],
-            },
-          }
+        ? { ...q, crm: { ...(q.crm || {}), tasks: timeline.tasks || [], activities: timeline.activities || [], notes: timeline.notes || [] } }
         : q
     )))
   }
@@ -331,9 +257,7 @@ export default function CrmPage() {
   async function addTask(quoteId: string) {
     const title = (taskDraftById[quoteId] || '').trim()
     if (!title) return
-
     const dueAt = taskDueDateById[quoteId] || undefined
-
     setSavingQuoteId(quoteId)
     try {
       const response = await quotesApi.addTask(quoteId, { title, dueAt })
@@ -362,17 +286,10 @@ export default function CrmPage() {
     }
   }
 
-  if (loading) {
-    return <div className="theme-dashboard-muted text-sm">Cargando CRM...</div>
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-semantic-danger">
-        {error}
-      </div>
-    )
-  }
+  if (loading) return <div className="theme-dashboard-muted text-sm">Cargando CRM...</div>
+  if (error)   return (
+    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-semantic-danger">{error}</div>
+  )
 
   return (
     <div className="space-y-6">
@@ -385,7 +302,7 @@ export default function CrmPage() {
           </div>
         </div>
 
-        {/* Barra de filtros */}
+        {/* Filtros */}
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
@@ -400,9 +317,7 @@ export default function CrmPage() {
             className="theme-dashboard-input rounded-lg px-3 py-2 text-sm outline-none focus:border-[color:var(--dashboard-accent)]"
           >
             <option value="">Todos los servicios</option>
-            {serviceTypes.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            {serviceTypes.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
             value={filterScore}
@@ -422,9 +337,7 @@ export default function CrmPage() {
             </button>
           )}
           {hasFilters && (
-            <span className="theme-dashboard-muted text-xs">
-              {filteredQuotes.length} de {quotes.length} leads
-            </span>
+            <span className="theme-dashboard-muted text-xs">{filteredQuotes.length} de {quotes.length} leads</span>
           )}
         </div>
       </header>
@@ -495,15 +408,26 @@ export default function CrmPage() {
                   <span className="theme-dashboard-text">{stage.label}</span>
                   <span className="theme-dashboard-muted">{kpis.agingByStage[stage.id]?.avgDays || 0} d</span>
                 </div>
-                <p className="theme-dashboard-muted mt-1">{kpis.agingByStage[stage.id]?.count || 0} leads · max {kpis.agingByStage[stage.id]?.maxDays || 0} d</p>
+                <p className="theme-dashboard-muted mt-1">
+                  {kpis.agingByStage[stage.id]?.count || 0} leads · max {kpis.agingByStage[stage.id]?.maxDays || 0} d
+                </p>
               </div>
             ))}
           </div>
         </article>
       </section>
 
-      {/* Kanban board con scrollbar superior sincronizada pegada encima */}
-      <div>
+      {/* Kanban board — containerRef es el único overflow-x-auto;
+          topScrollRef vive dentro como primer hijo para mostrar scrollbar superior */}
+      <div
+        ref={containerRef}
+        className="overflow-x-auto pb-2"
+        onScroll={e => {
+          if (topScrollRef.current)
+            topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft
+        }}
+      >
+        {/* Scrollbar espejo en la parte superior */}
         <div
           ref={topScrollRef}
           style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
@@ -514,181 +438,179 @@ export default function CrmPage() {
         >
           <div style={{ width: mirrorWidth, height: '1px' }} />
         </div>
-        <section
-          ref={containerRef}
-          className="overflow-x-auto pb-2"
-          onScroll={e => {
-            if (topScrollRef.current)
-              topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft
-          }}
-        >
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex min-w-[1320px] gap-4">
-            {STAGES.map((stage) => (
-              <KanbanColumn
-                key={stage.id}
-                stageId={stage.id}
-                accent={stage.accent}
-                label={stage.label}
-                hint={stage.hint}
-                count={leadsByStage[stage.id]}
-              >
-                {quotesByStage[stage.id].map((quote) => {
-                  const hasProject = Boolean(quote.project?._id)
-                  const notes = quote.crm?.notes || []
-                  const latestNote = notes.length > 0 ? notes[notes.length - 1] : null
-                  const activities = quote.crm?.activities || []
-                  const tasks = quote.crm?.tasks || []
-                  const openTasks = tasks.filter((task) => task.status === 'pendiente')
-                  const overdueTasks = openTasks.filter((task) => task.dueAt && new Date(task.dueAt).getTime() < Date.now())
 
-                  return (
-                    <KanbanCard
-                      key={quote._id}
-                      quoteId={quote._id}
-                      disabled={savingQuoteId === quote._id}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="theme-dashboard-text text-sm font-semibold">{quote.client.name}</p>
-                          <p className="theme-dashboard-muted text-xs">{quote.client.company || quote.client.email}</p>
-                        </div>
-                        <span className="rounded-md bg-[var(--dashboard-accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--dashboard-accent)]">
-                          {quote.serviceType}
-                        </span>
-                      </div>
+        {/* Columnas */}
+        <div className="flex min-w-[1320px] gap-4">
+          {STAGES.map((stage) => (
+            <KanbanColumn
+              key={stage.id}
+              stageId={stage.id}
+              accent={stage.accent}
+              label={stage.label}
+              hint={stage.hint}
+              count={leadsByStage[stage.id]}
+              isOver={dragOverStage === stage.id}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnter={() => setDragOverStage(stage.id)}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node))
+                  setDragOverStage(null)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragOverStage(null)
+                const leadId = e.dataTransfer.getData('leadId')
+                if (leadId) handleMoveCard(leadId, stage.id)
+              }}
+            >
+              {quotesByStage[stage.id].map((quote) => {
+                const hasProject  = Boolean(quote.project?._id)
+                const notes       = quote.crm?.notes || []
+                const latestNote  = notes.length > 0 ? notes[notes.length - 1] : null
+                const activities  = quote.crm?.activities || []
+                const tasks       = quote.crm?.tasks || []
+                const openTasks   = tasks.filter((t) => t.status === 'pendiente')
+                const overdueTasks = openTasks.filter((t) => t.dueAt && new Date(t.dueAt).getTime() < Date.now())
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                        <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
-                          <p className="theme-dashboard-muted">Valor</p>
-                          <p className="theme-dashboard-text font-semibold">{money(quote.pricing.total)}</p>
-                        </div>
-                        <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
-                          <p className="theme-dashboard-muted">Lead score</p>
-                          <p className="theme-dashboard-text font-semibold">{quote.leadScore}/100</p>
-                        </div>
+                return (
+                  <KanbanCard
+                    key={quote._id}
+                    quoteId={quote._id}
+                    disabled={savingQuoteId === quote._id}
+                    isDragging={draggingQuoteId === quote._id}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('leadId', quote._id)
+                      e.dataTransfer.effectAllowed = 'move'
+                      setDraggingQuoteId(quote._id)
+                    }}
+                    onDragEnd={() => {
+                      setDraggingQuoteId(null)
+                      setDragOverStage(null)
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="theme-dashboard-text text-sm font-semibold">{quote.client.name}</p>
+                        <p className="theme-dashboard-muted text-xs">{quote.client.company || quote.client.email}</p>
                       </div>
+                      <span className="rounded-md bg-[var(--dashboard-accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--dashboard-accent)]">
+                        {quote.serviceType}
+                      </span>
+                    </div>
 
-                      <div className="theme-dashboard-muted mt-2 text-[11px]">
-                        Creado: {new Date(quote.createdAt).toLocaleDateString('es-CO')}
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
+                        <p className="theme-dashboard-muted">Valor</p>
+                        <p className="theme-dashboard-text font-semibold">{money(quote.pricing.total)}</p>
                       </div>
-                      <div className="theme-dashboard-muted mt-1 text-[11px]">
-                        Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length} · Vencidas: {overdueTasks.length}
+                      <div className="theme-dashboard-surface-2 rounded-lg border theme-dashboard-border px-2 py-1.5">
+                        <p className="theme-dashboard-muted">Lead score</p>
+                        <p className="theme-dashboard-text font-semibold">{quote.leadScore}/100</p>
                       </div>
-                      {hasProject && (
-                        <div className="mt-1 text-[11px] text-semantic-success">Proyecto vinculado: {quote.project?.title}</div>
+                    </div>
+
+                    <div className="theme-dashboard-muted mt-2 text-[11px]">
+                      Creado: {new Date(quote.createdAt).toLocaleDateString('es-CO')}
+                    </div>
+                    <div className="theme-dashboard-muted mt-1 text-[11px]">
+                      Actividad: {activities.length} eventos · Tareas abiertas: {openTasks.length} · Vencidas: {overdueTasks.length}
+                    </div>
+                    {hasProject && (
+                      <div className="mt-1 text-[11px] text-semantic-success">
+                        Proyecto vinculado: {quote.project?.title}
+                      </div>
+                    )}
+
+                    {/* Nota comercial */}
+                    <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
+                      <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Nota comercial</p>
+                      {latestNote && (
+                        <p className="theme-dashboard-muted mb-2 text-[11px]">Ultima: {latestNote.message}</p>
                       )}
+                      <textarea
+                        value={noteDraftById[quote._id] || ''}
+                        onChange={(e) => setNoteDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
+                        onDragStart={(e) => e.stopPropagation()}
+                        rows={2}
+                        placeholder="Agregar contexto de la oportunidad..."
+                        className="theme-dashboard-input w-full resize-none rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
+                      />
+                      <button
+                        type="button"
+                        disabled={savingQuoteId === quote._id}
+                        onClick={() => addNote(quote._id)}
+                        className="theme-dashboard-button mt-2 w-full rounded-md px-2 py-1.5 text-xs font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Guardar nota
+                      </button>
+                    </div>
 
-                      {/* Nota comercial */}
-                      <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
-                        <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Nota comercial</p>
-                        {latestNote && (
-                          <p className="theme-dashboard-muted mb-2 text-[11px]">
-                            Ultima: {latestNote.message}
-                          </p>
-                        )}
-                        <textarea
-                          value={noteDraftById[quote._id] || ''}
-                          onChange={(e) => setNoteDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
-                          rows={2}
-                          placeholder="Agregar contexto de la oportunidad..."
-                          className="theme-dashboard-input w-full resize-none rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
-                        />
-                        <button
-                          type="button"
-                          disabled={savingQuoteId === quote._id}
-                          onClick={() => addNote(quote._id)}
-                          className="theme-dashboard-button mt-2 w-full rounded-md px-2 py-1.5 text-xs font-medium transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Guardar nota
-                        </button>
+                    {/* Tareas */}
+                    <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
+                      <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Tareas comerciales</p>
+                      <div className="space-y-1">
+                        {tasks.slice(-3).reverse().map((task) => {
+                          const isOverdue = task.status === 'pendiente' && task.dueAt && new Date(task.dueAt) < new Date()
+                          return (
+                            <button
+                              key={task._id}
+                              type="button"
+                              onClick={() => toggleTask(quote._id, task._id, task.status)}
+                              className="theme-dashboard-surface flex w-full flex-col rounded-md border theme-dashboard-border px-2 py-1 text-left text-[11px] theme-dashboard-text hover:border-[color:var(--dashboard-accent)]"
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <span className={task.status === 'completada' ? 'line-through opacity-60' : ''}>{task.title}</span>
+                                <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
+                              </div>
+                              {task.dueAt && (
+                                <span className={`mt-0.5 text-[10px] ${isOverdue ? 'text-semantic-danger' : 'theme-dashboard-muted'}`}>
+                                  {isOverdue ? '⚠ ' : ''}Vence: {new Date(task.dueAt).toLocaleDateString('es-CO')}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                        {tasks.length === 0 && <p className="theme-dashboard-muted text-[11px]">Sin tareas aun.</p>}
                       </div>
-
-                      {/* Tareas */}
-                      <div className="mt-3 theme-dashboard-surface-2 rounded-lg border theme-dashboard-border p-2">
-                        <p className="theme-dashboard-muted mb-1 text-[11px] font-semibold uppercase tracking-wide">Tareas comerciales</p>
-                        <div className="space-y-1">
-                          {tasks.slice(-3).reverse().map((task) => {
-                            const isOverdue = task.status === 'pendiente' && task.dueAt && new Date(task.dueAt) < new Date()
-                            return (
-                              <button
-                                key={task._id}
-                                type="button"
-                                onClick={() => toggleTask(quote._id, task._id, task.status)}
-                                className="theme-dashboard-surface flex w-full flex-col rounded-md border theme-dashboard-border px-2 py-1 text-left text-[11px] theme-dashboard-text hover:border-[color:var(--dashboard-accent)]"
-                              >
-                                <div className="flex w-full items-center justify-between">
-                                  <span className={task.status === 'completada' ? 'line-through opacity-60' : ''}>{task.title}</span>
-                                  <span className="theme-dashboard-muted text-[10px] uppercase tracking-wide">{task.status}</span>
-                                </div>
-                                {task.dueAt && (
-                                  <span className={`mt-0.5 text-[10px] ${isOverdue ? 'text-semantic-danger' : 'theme-dashboard-muted'}`}>
-                                    {isOverdue ? '⚠ ' : ''}Vence: {new Date(task.dueAt).toLocaleDateString('es-CO')}
-                                  </span>
-                                )}
-                              </button>
-                            )
-                          })}
-                          {tasks.length === 0 && <p className="theme-dashboard-muted text-[11px]">Sin tareas aun.</p>}
-                        </div>
-                        <div className="mt-2 space-y-1.5">
+                      <div className="mt-2 space-y-1.5">
+                        <input
+                          value={taskDraftById[quote._id] || ''}
+                          onChange={(e) => setTaskDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
+                          onDragStart={(e) => e.stopPropagation()}
+                          placeholder="Nueva tarea"
+                          className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
+                        />
+                        <div className="flex gap-2">
                           <input
-                            value={taskDraftById[quote._id] || ''}
-                            onChange={(e) => setTaskDraftById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
-                            placeholder="Nueva tarea"
+                            type="date"
+                            value={taskDueDateById[quote._id] || ''}
+                            onChange={(e) => setTaskDueDateById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
+                            onDragStart={(e) => e.stopPropagation()}
                             className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
                           />
-                          <div className="flex gap-2">
-                            <input
-                              type="date"
-                              value={taskDueDateById[quote._id] || ''}
-                              onChange={(e) => setTaskDueDateById((prev) => ({ ...prev, [quote._id]: e.target.value }))}
-                              className="theme-dashboard-input w-full rounded-md px-2 py-1 text-xs outline-none focus:border-[color:var(--dashboard-accent)]"
-                            />
-                            <button
-                              type="button"
-                              disabled={savingQuoteId === quote._id}
-                              onClick={() => addTask(quote._id)}
-                              className="theme-dashboard-button rounded-md px-2 py-1 text-xs hover:opacity-90 disabled:opacity-50"
-                            >
-                              +
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            disabled={savingQuoteId === quote._id}
+                            onClick={() => addTask(quote._id)}
+                            className="theme-dashboard-button rounded-md px-2 py-1 text-xs hover:opacity-90 disabled:opacity-50"
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
-                    </KanbanCard>
-                  )
-                })}
+                    </div>
+                  </KanbanCard>
+                )
+              })}
 
-                {quotesByStage[stage.id].length === 0 && (
-                  <div className="rounded-xl border border-dashed theme-dashboard-border theme-dashboard-muted px-3 py-6 text-center text-xs">
-                    Arrastra leads aqui
-                  </div>
-                )}
-              </KanbanColumn>
-            ))}
-          </div>
-
-          <DragOverlay dropAnimation={null}>
-            {draggingQuoteId ? (() => {
-              const q = quotes.find((quote) => quote._id === draggingQuoteId)
-              return q ? (
-                <div className="theme-dashboard-card w-[330px] rotate-1 rounded-xl border p-3 shadow-2xl opacity-95">
-                  <p className="theme-dashboard-text text-sm font-semibold">{q.client.name}</p>
-                  <p className="theme-dashboard-muted text-xs">{q.client.company || q.client.email}</p>
-                  <p className="theme-dashboard-muted mt-2 text-xs">
-                    {q.serviceType} · {money(q.pricing.total)}
-                  </p>
+              {quotesByStage[stage.id].length === 0 && (
+                <div className="rounded-xl border border-dashed theme-dashboard-border theme-dashboard-muted px-3 py-6 text-center text-xs">
+                  Arrastra leads aqui
                 </div>
-              ) : null
-            })() : null}
-          </DragOverlay>
-        </DndContext>
-        </section>
+              )}
+            </KanbanColumn>
+          ))}
+        </div>
       </div>
 
       {toast && (
