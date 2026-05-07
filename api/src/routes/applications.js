@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Application = require('../models/Application');
-const { auth, roles } = require('../middleware/auth');
+const auth = require('../middleware/auth');
+const roles = require('../middleware/roles');
 
 const PAY_RANGES = {
   1: '$40.000 - $60.000 / hora',
