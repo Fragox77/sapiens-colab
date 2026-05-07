@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -165,6 +165,20 @@ export default function CrmPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterService, setFilterService] = useState('')
   const [filterScore, setFilterScore] = useState<'all' | 'high' | 'medium'>('all')
+
+  const containerRef = useRef<HTMLElement>(null)
+  const topScrollRef = useRef<HTMLDivElement>(null)
+  const [mirrorWidth, setMirrorWidth] = useState(0)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const update = () => setMirrorWidth(container.scrollWidth)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(container)
+    return () => ro.disconnect()
+  }, [])
 
   const money = (value: number) => `$${value.toLocaleString('es-CO')}`
 
@@ -487,8 +501,27 @@ export default function CrmPage() {
         </article>
       </section>
 
+      {/* Scrollbar superior — espejo sincronizado del kanban */}
+      <div
+        ref={topScrollRef}
+        style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
+        onScroll={e => {
+          if (containerRef.current)
+            containerRef.current.scrollLeft = e.currentTarget.scrollLeft
+        }}
+      >
+        <div style={{ width: mirrorWidth, height: '1px' }} />
+      </div>
+
       {/* Kanban board */}
-      <section className="overflow-x-auto pb-2">
+      <section
+        ref={containerRef}
+        className="overflow-x-auto pb-2"
+        onScroll={e => {
+          if (topScrollRef.current)
+            topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft
+        }}
+      >
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
