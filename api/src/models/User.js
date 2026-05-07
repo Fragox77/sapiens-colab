@@ -27,6 +27,9 @@ const userSchema = new mongoose.Schema({
   // Para el admin fundador: tenantId = su propio _id (auto-asignado en registro)
   // Para colaboradores creados por admin: tenantId heredado del admin
   tenantId:    { type: String, default: null, index: true },
+
+  // Soft delete — null = activo, Date = eliminado
+  deletedAt:   { type: Date, default: null },
 }, { timestamps: true });
 
 // Hash password antes de guardar

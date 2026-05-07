@@ -12,9 +12,12 @@ export interface User {
   portfolio?: string
   company?: string
   phone?: string
+  avatar?: string
   isActive: boolean
   isAvailable?: boolean
   createdAt: string
+  updatedAt?: string
+  deletedAt?: string | null
 }
 
 export type ServiceType =

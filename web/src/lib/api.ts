@@ -235,3 +235,23 @@ export const metricsApi = {
     return api.get<import('@/types').FinanceMetrics>(`/api/metrics/finance${buildQuery(params)}`)
   },
 }
+
+// ─── Usuarios (admin) ─────────────────────────────────────────────────────────
+export const usersApi = {
+  list: (params?: { role?: string; active?: string; search?: string }) => {
+    const entries = Object.entries({ limit: '500', ...params }).filter(([, v]) => Boolean(v))
+    const qs = entries.length ? `?${new URLSearchParams(entries as [string, string][]).toString()}` : ''
+    return api.get<{ users: import('@/types').User[]; total: number; page: number; pages: number }>(`/api/users${qs}`)
+  },
+  get:    (id: string) => api.get<import('@/types').User>(`/api/users/${id}`),
+  create: (data: { name: string; email: string; role: string; password: string }) =>
+    api.post<import('@/types').User>('/api/users', data),
+  update: (id: string, data: Partial<{ name: string; email: string; role: string; isActive: boolean }>) =>
+    api.patch<import('@/types').User>(`/api/users/${id}`, data),
+  changePassword: (id: string, newPassword: string) =>
+    api.patch<{ ok: boolean }>(`/api/users/${id}/password`, { newPassword }),
+  toggleAccess: (id: string) =>
+    api.patch<{ ok: boolean; isActive: boolean; user: import('@/types').User }>(`/api/users/${id}/toggle-access`, {}),
+  delete: (id: string) =>
+    api.delete<{ ok: boolean }>(`/api/users/${id}`),
+}
