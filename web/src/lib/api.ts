@@ -155,6 +155,40 @@ export const billingApi = {
     api.patch<{ tenantId: string; plan: string; commissionRate: number; seats: number; maxActiveProjects: number }>('/api/v1/billing/plan', { plan }),
 }
 
+const WA_API = process.env.NEXT_PUBLIC_WHATSAPP_SERVICE_URL || 'http://localhost:3001'
+
+async function waRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getToken()
+  const res = await fetch(`${WA_API}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
+  return data as T
+}
+
+export const briefsApi = {
+  list: (params?: { page?: number; estado?: string; urgencia?: string }) => {
+    const parts: string[] = []
+    if (params?.page !== undefined) parts.push(`page=${params.page}`)
+    if (params?.estado) parts.push(`estado=${encodeURIComponent(params.estado)}`)
+    if (params?.urgencia) parts.push(`urgencia=${encodeURIComponent(params.urgencia)}`)
+    const qs = parts.length ? `?${parts.join('&')}` : ''
+    return waRequest<{ data: import('@/types').Brief[]; total: number; page: number; pages: number }>(`/api/briefs${qs}`)
+  },
+  get: (id: string) =>
+    waRequest<{ data: import('@/types').BriefDetalle }>(`/api/briefs/${id}`),
+  aprobar: (id: string) =>
+    waRequest<{ data: import('@/types').Brief }>(`/api/briefs/${id}/aprobar`, { method: 'PATCH' }),
+  regenerar: (convId: string) =>
+    waRequest<{ data: import('@/types').BriefDetalle }>(`/api/briefs/generar/${convId}`, { method: 'POST' }),
+}
+
 function buildQuery(params?: { from?: string; to?: string }) {
   if (!params) return ''
   const entries = Object.entries(params).filter(([, v]) => Boolean(v))

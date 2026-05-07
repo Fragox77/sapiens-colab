@@ -480,3 +480,34 @@ export interface FinanceMetrics {
   }
   weeklyEvolution: WeeklyMetricPoint[]
 }
+
+// ─── WhatsApp Briefs ───────────────────────────────────────────
+export type BriefUrgencia = 'alta' | 'media' | 'baja'
+export type BriefEstado = 'borrador' | 'aprobado' | 'convertido'
+
+export interface BriefCliente {
+  nombre: string
+  telefono: string
+  whatsapp: string
+}
+
+export interface Brief {
+  id: string
+  conversacionId: string
+  clienteId: string
+  objetivo: string
+  entregables: string[]
+  referencias: string[]
+  tonoMarca: string
+  fechaLimite: string
+  urgencia: BriefUrgencia
+  pendientes: string[]
+  respuestaSugerida: string
+  estado: BriefEstado
+  cliente: BriefCliente
+  creadoAt: string
+}
+
+export interface BriefDetalle extends Brief {
+  mensajes?: Array<{ rol: 'user' | 'assistant'; contenido: string; at: string }>
+}
