@@ -31,16 +31,19 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
   const items = navByRole[user.role] || []
 
   return (
-    <aside className="theme-dashboard-sidebar relative w-64 border-r backdrop-blur-xl">
+    <aside className="theme-dashboard-sidebar relative flex h-full w-64 flex-col border-r backdrop-blur-xl">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_-20%_0%,rgba(79,70,229,0.18),transparent_45%)]" />
-      <div className="px-5 py-5 border-b border-[var(--dashboard-border)]">
+
+      {/* Logo */}
+      <div className="shrink-0 border-b border-[var(--dashboard-border)] px-5 py-5">
         <Link href="/" className="block">
           <p className="theme-dashboard-muted text-xs uppercase tracking-[0.25em]">Sapiens</p>
           <p className="theme-dashboard-text text-sm font-bold">Colab Platform</p>
         </Link>
       </div>
 
-      <nav className="relative z-10 px-3 py-4 space-y-1">
+      {/* Nav — ocupa el espacio disponible y hace scroll si hay muchos items */}
+      <nav className="relative z-10 flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {items.map((item) => {
           const active = pathname === item.href
           return (
@@ -60,7 +63,8 @@ export default function Sidebar({ user, pathname, onSignOut }: SidebarProps) {
         })}
       </nav>
 
-      <div className="theme-dashboard-surface absolute bottom-0 w-64 border-t theme-dashboard-border px-4 py-4">
+      {/* Usuario — siempre pegado al fondo */}
+      <div className="theme-dashboard-surface shrink-0 border-t theme-dashboard-border px-4 py-4">
         <p className="theme-dashboard-text text-sm font-semibold truncate">{user.name}</p>
         <p className="theme-dashboard-muted text-xs capitalize mb-3">{user.role}</p>
         <button
