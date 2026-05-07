@@ -99,6 +99,7 @@ app.use('/api/upload',      require('./src/routes/upload'));
 app.use('/api/metrics',    require('./src/routes/metrics'));
 app.use('/api/dashboard',  require('./src/routes/dashboard'));
 app.use('/api/billing',    require('./src/routes/billing'));
+app.use('/api/finanzas',  require('./src/routes/finanzas'));
 app.use('/api/v1',       require('./src/app/api/v1/router'));
 
 // Health check

@@ -167,6 +167,17 @@ export const dashboardApi = {
     api.get<import('@/types').DashboardStats>(`/api/dashboard/stats${buildQuery(params)}`),
 }
 
+export const finanzasApi = {
+  resumen: (params?: { from?: string; to?: string }) =>
+    api.get<import('@/types').FinanzasResumen>(`/api/finanzas/resumen${buildQuery(params)}`),
+  crearLiquidacion: (data: {
+    colaboradorId: string
+    monto: number
+    comprobante: string
+    fecha: string
+  }) => api.post<{ _id: string; colaboradorId: string; monto: number; fecha: string }>('/api/finanzas/liquidaciones', data),
+}
+
 export const metricsApi = {
   dashboard: (params?: { from?: string; to?: string }) => {
     return api.get<import('@/types').DashboardMetrics>(`/api/metrics/dashboard${buildQuery(params)}`)

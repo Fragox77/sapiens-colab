@@ -394,6 +394,47 @@ export interface DashboardStats {
   }
 }
 
+// ─── Finanzas ──────────────────────────────────────────────────
+export interface FinanzasKpis {
+  facturacionBruta: number
+  comisionSapiens: number
+  retencionesTotales: number
+  utilidadNeta: number
+}
+
+export interface ColaboradorFinanzas {
+  id: string
+  nombre: string
+  proyectosActivos: number
+  valorBruto: number
+  comisionAgencia: number
+  retefuente: number
+  netoPagar: number
+  anticiposPagados: number
+  saldoPendiente: number
+  estado: 'al_dia' | 'pendiente' | 'liquidado'
+}
+
+export interface ProyectoFinanzas {
+  id: string
+  nombre: string
+  cliente: string
+  colaborador: string
+  colaboradorId: string | null
+  valorTotal: number
+  comision: number
+  netoPagar: number
+  anticipoCliente: number
+  anticipoColaborador: number
+  estado: 'activo' | 'completado' | 'liquidado'
+}
+
+export interface FinanzasResumen {
+  kpis: FinanzasKpis
+  colaboradores: ColaboradorFinanzas[]
+  proyectos: ProyectoFinanzas[]
+}
+
 export interface FinanceMetrics {
   period: { from: string; to: string }
   business: {
