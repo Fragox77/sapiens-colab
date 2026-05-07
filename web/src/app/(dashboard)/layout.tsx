@@ -17,7 +17,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const u = getStoredUser()
     if (!u) { router.push('/login'); return }
     setUser(u)
-  }, [router])
+    // Redirecciones cruzadas de rol
+    if (u.role === 'disenador' && pathname === '/admin/finanzas') {
+      router.replace('/colaborador/finanzas')
+    }
+    if (u.role === 'admin' && pathname.startsWith('/colaborador')) {
+      router.replace('/admin/finanzas')
+    }
+  }, [router, pathname])
 
   // Cierra el drawer al navegar
   useEffect(() => {

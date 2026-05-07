@@ -8,7 +8,7 @@ const navByRole: Record<Role, Array<{ href: string; label: string }>> = {
   ],
   disenador: [
     { href: '/disenador', label: 'Produccion' },
-    { href: '/disenador/financiero', label: 'Finanzas' },
+    { href: '/colaborador/finanzas', label: 'Mis finanzas' },
     { href: '/disenador/perfil', label: 'Perfil' },
   ],
   admin: [

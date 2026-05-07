@@ -170,6 +170,8 @@ export const dashboardApi = {
 export const finanzasApi = {
   resumen: (params?: { from?: string; to?: string }) =>
     api.get<import('@/types').FinanzasResumen>(`/api/finanzas/resumen${buildQuery(params)}`),
+  resumenColaborador: (params?: { from?: string; to?: string }) =>
+    api.get<import('@/types').ColaboradorFinanzasResumen>(`/api/finanzas/resumen${buildQuery(params)}`),
   crearLiquidacion: (data: {
     colaboradorId: string
     monto: number
