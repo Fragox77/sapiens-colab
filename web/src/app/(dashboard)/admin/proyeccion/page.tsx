@@ -55,9 +55,11 @@ export default function PlanesPage() {
   }), [proyecto, nProyectos])
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-6">
-        <h1 className="theme-dashboard-text text-3xl font-bold">Proyección mensual</h1>
+    <div className="w-full max-w-4xl">
+      <div className="mb-6 w-full">
+        <h1 className="theme-dashboard-text text-2xl sm:text-3xl font-bold whitespace-normal break-words">
+          Proyección mensual
+        </h1>
         <p className="theme-dashboard-muted mt-1 text-sm">Simula ingresos y márgenes reales para el mes</p>
       </div>
 
@@ -129,7 +131,7 @@ export default function PlanesPage() {
       </div>
 
       {/* Métricas mensuales */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <MetricCard label="Facturación bruta" value={cop(totales.facturacionBruta)} color="blue" textClass="text-foreground" />
         <MetricCard
           label="Retenciones totales"
@@ -221,7 +223,7 @@ function SliderField({
 }) {
   return (
     <div>
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-0.5">
         <label className="theme-dashboard-muted text-xs">{label}</label>
         <span className="theme-dashboard-text text-sm font-semibold font-mono">{format(value)}</span>
       </div>
@@ -234,9 +236,9 @@ function SliderField({
         onChange={e => onChange(Number(e.target.value))}
         className="w-full accent-[#4C58FF] cursor-pointer h-1.5"
       />
-      <div className="flex justify-between theme-dashboard-muted text-xs mt-1 opacity-60">
-        <span>{format(min)}</span>
-        <span>{format(max)}</span>
+      <div className="flex justify-between theme-dashboard-muted text-[10px] sm:text-xs mt-1 opacity-60">
+        <span className="truncate max-w-[45%]">{format(min)}</span>
+        <span className="truncate max-w-[45%] text-right">{format(max)}</span>
       </div>
     </div>
   )

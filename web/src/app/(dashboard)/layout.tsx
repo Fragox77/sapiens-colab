@@ -11,12 +11,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const u = getStoredUser()
     if (!u) { router.push('/login'); return }
     setUser(u)
   }, [router])
+
+  // Cierra el drawer al navegar
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     const stored = window.localStorage.getItem('sc_theme')
@@ -48,6 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="theme-dashboard-shell relative flex h-screen overflow-hidden">
+      {/* Fondos decorativos */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute right-0 top-1/4 h-80 w-80 rounded-full bg-indigo-300/10 blur-3xl" />
@@ -55,21 +62,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.12),_transparent_45%)]" />
       </div>
 
-      <Sidebar
-        user={user}
-        pathname={pathname}
-        onSignOut={() => { clearSession(); router.push('/') }}
-      />
+      {/* Overlay oscuro — solo mobile cuando el drawer está abierto */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
+      {/* Sidebar: drawer en mobile, estático en desktop */}
+      <div
+        className={[
+          'fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out',
+          'md:static md:z-auto md:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+      >
+        <Sidebar
+          user={user}
+          pathname={pathname}
+          onSignOut={() => { clearSession(); router.push('/') }}
+        />
+      </div>
+
+      {/* Contenido principal */}
       <div className="relative z-10 flex flex-1 flex-col overflow-hidden">
         <Navbar
           title="SAPIENS COLAB"
           subtitle="Operacion, finanzas y productividad"
           theme={theme}
           onToggleTheme={toggleTheme}
+          onMenuToggle={() => setSidebarOpen(prev => !prev)}
         />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="theme-dashboard-panel mx-auto w-full max-w-[1600px] rounded-2xl border p-6 backdrop-blur">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
+          <div className="theme-dashboard-panel mx-auto w-full max-w-[1600px] rounded-2xl border p-4 md:p-6 backdrop-blur">
             {children}
           </div>
         </main>
