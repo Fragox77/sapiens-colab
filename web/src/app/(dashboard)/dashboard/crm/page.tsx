@@ -103,7 +103,7 @@ function KanbanCard({
   disabled: boolean
   children: React.ReactNode
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: quoteId,
     disabled,
   })
@@ -115,8 +115,9 @@ function KanbanCard({
         isDragging ? 'opacity-40' : ''
       }`}
     >
-      {/* Handle de arrastre — solo esta zona activa el drag */}
+      {/* Handle de arrastre — setActivatorNodeRef registra este nodo como activador */}
       <div
+        ref={setActivatorNodeRef}
         {...attributes}
         {...listeners}
         className="mb-2 flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
@@ -501,27 +502,26 @@ export default function CrmPage() {
         </article>
       </section>
 
-      {/* Scrollbar superior — espejo sincronizado del kanban */}
-      <div
-        ref={topScrollRef}
-        style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
-        onScroll={e => {
-          if (containerRef.current)
-            containerRef.current.scrollLeft = e.currentTarget.scrollLeft
-        }}
-      >
-        <div style={{ width: mirrorWidth, height: '1px' }} />
-      </div>
-
-      {/* Kanban board */}
-      <section
-        ref={containerRef}
-        className="overflow-x-auto pb-2"
-        onScroll={e => {
-          if (topScrollRef.current)
-            topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft
-        }}
-      >
+      {/* Kanban board con scrollbar superior sincronizada pegada encima */}
+      <div>
+        <div
+          ref={topScrollRef}
+          style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
+          onScroll={e => {
+            if (containerRef.current)
+              containerRef.current.scrollLeft = e.currentTarget.scrollLeft
+          }}
+        >
+          <div style={{ width: mirrorWidth, height: '1px' }} />
+        </div>
+        <section
+          ref={containerRef}
+          className="overflow-x-auto pb-2"
+          onScroll={e => {
+            if (topScrollRef.current)
+              topScrollRef.current.scrollLeft = e.currentTarget.scrollLeft
+          }}
+        >
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
@@ -688,7 +688,8 @@ export default function CrmPage() {
             })() : null}
           </DragOverlay>
         </DndContext>
-      </section>
+        </section>
+      </div>
 
       {toast && (
         <div className="theme-dashboard-card fixed bottom-6 right-6 rounded-lg border px-4 py-2 text-sm theme-dashboard-text shadow-xl">
