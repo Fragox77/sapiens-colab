@@ -233,6 +233,25 @@ export interface ApplicationScores {
   softSkills?:  number
 }
 
+export type ApplicationEstado = 'pendiente' | 'en_prueba' | 'evaluado' | 'aprobado' | 'descartado'
+
+export interface ApplicationEvaluacionPilar {
+  puntaje: number
+  nota?: string
+}
+
+export interface ApplicationEvaluacion {
+  experiencia?:            ApplicationEvaluacionPilar
+  portafolio?:             ApplicationEvaluacionPilar
+  pruebaPractica?:         ApplicationEvaluacionPilar
+  pensamientoEstrategico?: ApplicationEvaluacionPilar
+  softSkills?:             ApplicationEvaluacionPilar
+  nivelCalculado?: number
+  rangoPago?:      string
+  evaluadoAt?:     string
+  evaluadoPor?:    string | User
+}
+
 export interface Application {
   _id: string
   name: string
@@ -252,6 +271,17 @@ export interface Application {
   notes?: string
   userId?: string | User
   createdAt: string
+  // Nuevos campos
+  tools?:           string[]
+  source?:          string
+  experienceYears?: number
+  workDescription?: string
+  estado?:          ApplicationEstado
+  briefPrueba?:     string
+  fechaLimitePrueba?: string
+  entregaPrueba?:   string
+  evaluacion?:      ApplicationEvaluacion
+  timeline?:        Array<{ estado: string; nota?: string; by?: string | User; at: string }>
 }
 
 export interface FinancieroKpis {

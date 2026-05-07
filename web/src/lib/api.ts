@@ -90,6 +90,16 @@ export const adminApi = {
     api.patch<import('@/types').Project>(`/api/admin/projects/${id}`, data),
   deleteProject: (id: string) =>
     api.delete<{ ok: boolean }>(`/api/admin/projects/${id}`),
+  // ── Postulaciones ──
+  evaluarPostulacion: (id: string, data: {
+    experiencia:            import('@/types').ApplicationEvaluacionPilar
+    portafolio:             import('@/types').ApplicationEvaluacionPilar
+    pruebaPractica:         import('@/types').ApplicationEvaluacionPilar
+    pensamientoEstrategico: import('@/types').ApplicationEvaluacionPilar
+    softSkills:             import('@/types').ApplicationEvaluacionPilar
+  }) => api.patch<{ ok: boolean; application: import('@/types').Application }>(`/api/applications/${id}/evaluar`, data),
+  cambiarEstadoPostulacion: (id: string, data: { estado: string; briefPrueba?: string; fechaLimitePrueba?: string }) =>
+    api.patch<{ ok: boolean; application: import('@/types').Application }>(`/api/applications/${id}/estado`, data),
   // ── CRM Clientes ──
   clients: () => api.get<ClientStat[]>('/api/admin/clients'),
   client:  (id: string) => api.get<ClientDetail>(`/api/admin/clients/${id}`),
