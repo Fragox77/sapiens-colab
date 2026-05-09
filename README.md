@@ -76,7 +76,7 @@ npm run dev:web   # → http://localhost:3000
 ## Deploy
 
 - **Frontend**: Vercel (conectar `/web`)
-- **Backend**: Railway (conectar `/api`)
+- **Backend**: Render (conectar `/api`)
 - **Base de datos**: MongoDB Atlas (misma conexión de Fenalco o nueva DB `sapiens-colab`)
 - **Archivos**: Cloudinary (mismas credenciales de Fenalco)
 - **Dominio**: sapienscolab.com → Vercel
