@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --workspaces
+
+      - name: Test API
+        run: npm test --if-present
+        working-directory: api
+
+      - name: Lint web
+        run: npm run lint
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+
+      - name: Build web
+        run: npm run build
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
