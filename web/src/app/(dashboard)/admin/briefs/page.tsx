@@ -1,18 +1,36 @@
 'use client'
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { briefsApi } from '@/lib/api'
-import type { Brief, BriefDetalle, BriefEstado, BriefUrgencia } from '@/types'
+import { useState, useCallback } from 'react'
+import { useBriefs, useBriefStats } from '@/hooks/useBriefs'
+import type { Brief, BriefStatus, Urgency } from '@/lib/briefs-api'
 
-const URGENCIA_COLOR: Record<BriefUrgencia, string> = {
-  alta:  'bg-red-500/20 text-red-400 border-red-500/30',
-  media: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  baja:  'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+type TabEstado = '' | 'borrador' | 'aprobado' | 'convertido'
+type FiltroUrgencia = '' | 'alta' | 'media' | 'baja'
+
+const STATUS_COLOR: Record<BriefStatus, string> = {
+  DRAFT:     'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  PENDING:   'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  APPROVED:  'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  CONVERTED: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  REJECTED:  'bg-red-500/20 text-red-400 border-red-500/30',
 }
 
-const ESTADO_COLOR: Record<BriefEstado, string> = {
-  borrador:   'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  aprobado:   'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  convertido: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+const STATUS_LABEL: Record<BriefStatus, string> = {
+  DRAFT: 'borrador', PENDING: 'borrador',
+  APPROVED: 'aprobado', CONVERTED: 'convertido', REJECTED: 'rechazado',
+}
+
+const URGENCY_COLOR: Record<Urgency, string> = {
+  ALTA:  'bg-red-500/20 text-red-400 border-red-500/30',
+  MEDIA: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  BAJA:  'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+}
+
+const TAB_TO_STATUS: Record<TabEstado, BriefStatus | undefined> = {
+  '': undefined, borrador: 'PENDING', aprobado: 'APPROVED', convertido: 'CONVERTED',
+}
+
+const URGENCIA_TO_API: Record<FiltroUrgencia, Urgency | undefined> = {
+  '': undefined, alta: 'ALTA', media: 'MEDIA', baja: 'BAJA',
 }
 
 function Skeleton({ className }: { className?: string }) {
@@ -63,29 +81,29 @@ function CollapsibleSection({
 
 function BriefCard({ brief, onSelect }: { brief: Brief; onSelect: (id: string) => void }) {
   const MAX_CHIPS = 3
-  const visible = brief.entregables.slice(0, MAX_CHIPS)
-  const extra = brief.entregables.length - MAX_CHIPS
+  const visible = brief.deliverables.slice(0, MAX_CHIPS)
+  const extra = brief.deliverables.length - MAX_CHIPS
 
   return (
     <div className="theme-dashboard-surface rounded-xl border theme-dashboard-border p-4 flex flex-col gap-3 hover:border-[#4C58FF]/40 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="theme-dashboard-text text-sm font-semibold truncate">{brief.cliente.nombre}</p>
-          <p className="theme-dashboard-muted text-xs">{brief.cliente.telefono}</p>
+          <p className="theme-dashboard-text text-sm font-semibold truncate">{brief.client.name ?? '—'}</p>
+          <p className="theme-dashboard-muted text-xs">{brief.client.waId}</p>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${URGENCIA_COLOR[brief.urgencia]}`}>
-            {brief.urgencia}
+          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${URGENCY_COLOR[brief.urgency]}`}>
+            {brief.urgency.toLowerCase()}
           </span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${ESTADO_COLOR[brief.estado]}`}>
-            {brief.estado}
+          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[brief.status]}`}>
+            {STATUS_LABEL[brief.status]}
           </span>
         </div>
       </div>
 
-      <p className="theme-dashboard-muted text-xs leading-relaxed line-clamp-2">{brief.objetivo}</p>
+      <p className="theme-dashboard-muted text-xs leading-relaxed line-clamp-2">{brief.objective}</p>
 
-      {brief.entregables.length > 0 && (
+      {brief.deliverables.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {visible.map((e, i) => (
             <span
@@ -104,9 +122,9 @@ function BriefCard({ brief, onSelect }: { brief: Brief; onSelect: (id: string) =
       )}
 
       <div className="flex items-center justify-between mt-auto pt-1">
-        {brief.fechaLimite ? (
+        {brief.deadline ? (
           <p className="theme-dashboard-muted text-[10px]">
-            {new Date(brief.fechaLimite).toLocaleDateString('es-CO')}
+            {new Date(brief.deadline).toLocaleDateString('es-CO')}
           </p>
         ) : <span />}
         <button
@@ -121,58 +139,24 @@ function BriefCard({ brief, onSelect }: { brief: Brief; onSelect: (id: string) =
 }
 
 export default function BriefsPage() {
-  const [briefs, setBriefs] = useState<Brief[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [tabEstado, setTabEstado] = useState<'' | BriefEstado>('')
-  const [filtroUrgencia, setFiltroUrgencia] = useState<'' | BriefUrgencia>('')
+  const [tabEstado, setTabEstado] = useState<TabEstado>('')
+  const [filtroUrgencia, setFiltroUrgencia] = useState<FiltroUrgencia>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [detalle, setDetalle] = useState<BriefDetalle | null>(null)
-  const [detalleLoading, setDetalleLoading] = useState(false)
+  const [detalle, setDetalle] = useState<Brief | null>(null)
   const [approving, setApproving] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    briefsApi.list()
-      .then(res => setBriefs(res.data ?? []))
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+  const { briefs, loading, error, setStatus, reload } = useBriefs({
+    status: TAB_TO_STATUS[tabEstado],
+    urgency: URGENCIA_TO_API[filtroUrgencia],
+  })
+  const { stats, loading: statsLoading } = useBriefStats(60_000)
 
-  const kpis = useMemo(() => {
-    const today = new Date().toDateString()
-    const now = new Date()
-    return {
-      hoy: briefs.filter(b => new Date(b.creadoAt).toDateString() === today).length,
-      borradores: briefs.filter(b => b.estado === 'borrador').length,
-      aprobadosMes: briefs.filter(b => {
-        const d = new Date(b.creadoAt)
-        return b.estado === 'aprobado'
-          && d.getMonth() === now.getMonth()
-          && d.getFullYear() === now.getFullYear()
-      }).length,
-      urgenteSinAprobar: briefs.filter(b => b.urgencia === 'alta' && b.estado === 'borrador').length,
-    }
-  }, [briefs])
-
-  const filtered = useMemo(() => briefs.filter(b => {
-    if (tabEstado && b.estado !== tabEstado) return false
-    if (filtroUrgencia && b.urgencia !== filtroUrgencia) return false
-    return true
-  }), [briefs, tabEstado, filtroUrgencia])
-
-  const handleSelect = useCallback(async (id: string) => {
+  const handleSelect = useCallback((id: string) => {
     setSelectedId(id)
-    setDetalle(null)
-    setDetalleLoading(true)
-    try {
-      const res = await briefsApi.get(id)
-      setDetalle(res.data)
-    } catch { /* panel shows fallback */ } finally {
-      setDetalleLoading(false)
-    }
-  }, [])
+    setDetalle(briefs.find(b => b.id === id) ?? null)
+  }, [briefs])
 
   const closePanel = () => { setSelectedId(null); setDetalle(null) }
 
@@ -180,10 +164,8 @@ export default function BriefsPage() {
     if (!detalle) return
     setApproving(true)
     try {
-      await briefsApi.aprobar(detalle.id)
-      const next: BriefEstado = 'aprobado'
-      setDetalle(prev => prev ? { ...prev, estado: next } : prev)
-      setBriefs(prev => prev.map(b => b.id === detalle.id ? { ...b, estado: next } : b))
+      await setStatus(detalle.id, 'APPROVED')
+      setDetalle(prev => prev ? { ...prev, status: 'APPROVED' } : prev)
     } catch { /* noop */ } finally { setApproving(false) }
   }
 
@@ -191,23 +173,26 @@ export default function BriefsPage() {
     if (!detalle) return
     setRegenerating(true)
     try {
-      const res = await briefsApi.regenerar(detalle.conversacionId)
-      const updated: BriefDetalle = { ...detalle, ...res.data }
-      setDetalle(updated)
-      setBriefs(prev => prev.map(b => b.id === detalle.id ? { ...b, ...res.data } : b))
+      await reload()
+      setDetalle(prev => {
+        if (!prev) return prev
+        const refreshed = briefs.find(b => b.id === prev.id)
+        return refreshed ?? prev
+      })
     } catch { /* noop */ } finally { setRegenerating(false) }
   }
 
-  const handleConvertir = () => {
+  const handleConvertir = async () => {
     if (!detalle) return
-    const next: BriefEstado = 'convertido'
-    setDetalle(prev => prev ? { ...prev, estado: next } : prev)
-    setBriefs(prev => prev.map(b => b.id === detalle.id ? { ...b, estado: next } : b))
+    try {
+      await setStatus(detalle.id, 'CONVERTED')
+      setDetalle(prev => prev ? { ...prev, status: 'CONVERTED' } : prev)
+    } catch { /* noop */ }
   }
 
   const handleCopy = () => {
-    if (!detalle?.respuestaSugerida) return
-    navigator.clipboard.writeText(detalle.respuestaSugerida)
+    if (!detalle?.suggestedReply) return
+    navigator.clipboard.writeText(detalle.suggestedReply)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -224,14 +209,14 @@ export default function BriefsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Recibidos hoy" value={kpis.hoy} loading={loading} />
-        <KpiCard label="Pendientes de revisión" value={kpis.borradores} loading={loading} />
-        <KpiCard label="Aprobados este mes" value={kpis.aprobadosMes} loading={loading} accent="text-blue-400" />
+        <KpiCard label="Recibidos hoy" value={stats?.receivedToday ?? 0} loading={statsLoading} />
+        <KpiCard label="Pendientes de revisión" value={stats?.pendingReview ?? 0} loading={statsLoading} />
+        <KpiCard label="Aprobados este mes" value={stats?.approvedThisMonth ?? 0} loading={statsLoading} accent="text-blue-400" />
         <KpiCard
           label="Urgente sin aprobar"
-          value={kpis.urgenteSinAprobar}
-          loading={loading}
-          accent={kpis.urgenteSinAprobar > 0 ? 'text-red-400' : undefined}
+          value={stats?.urgentUnapproved ?? 0}
+          loading={statsLoading}
+          accent={(stats?.urgentUnapproved ?? 0) > 0 ? 'text-red-400' : undefined}
         />
       </div>
 
@@ -303,7 +288,7 @@ export default function BriefsPage() {
             </div>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : briefs.length === 0 ? (
         <div className="rounded-xl border theme-dashboard-border theme-dashboard-surface p-10 text-center">
           <p className="text-3xl mb-3">💬</p>
           <p className="theme-dashboard-text font-medium">
@@ -318,7 +303,7 @@ export default function BriefsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(brief => (
+          {briefs.map(brief => (
             <BriefCard key={brief.id} brief={brief} onSelect={handleSelect} />
           ))}
         </div>
@@ -346,7 +331,7 @@ export default function BriefsPage() {
 
             {/* Panel body */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {detalleLoading || regenerating ? (
+              {regenerating ? (
                 <div className="space-y-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-full" />
@@ -360,25 +345,25 @@ export default function BriefsPage() {
                 <>
                   {/* Client info */}
                   <div className="theme-dashboard-surface rounded-lg border theme-dashboard-border p-3">
-                    <p className="theme-dashboard-text text-sm font-semibold">{detalle.cliente.nombre}</p>
-                    <p className="theme-dashboard-muted text-xs">{detalle.cliente.telefono}</p>
+                    <p className="theme-dashboard-text text-sm font-semibold">{detalle.client.name ?? '—'}</p>
+                    <p className="theme-dashboard-muted text-xs">{detalle.client.waId}</p>
                     <div className="flex gap-2 mt-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${URGENCIA_COLOR[detalle.urgencia]}`}>
-                        {detalle.urgencia}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${URGENCY_COLOR[detalle.urgency]}`}>
+                        {detalle.urgency.toLowerCase()}
                       </span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${ESTADO_COLOR[detalle.estado]}`}>
-                        {detalle.estado}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[detalle.status]}`}>
+                        {STATUS_LABEL[detalle.status]}
                       </span>
                     </div>
                   </div>
 
                   <CollapsibleSection title="Objetivo">
-                    <p className="theme-dashboard-text text-sm leading-relaxed">{detalle.objetivo}</p>
+                    <p className="theme-dashboard-text text-sm leading-relaxed">{detalle.objective}</p>
                   </CollapsibleSection>
 
                   <CollapsibleSection title="Entregables">
                     <ul className="space-y-1.5">
-                      {detalle.entregables.map((e, i) => (
+                      {detalle.deliverables.map((e, i) => (
                         <li key={i} className="theme-dashboard-muted text-sm flex items-start gap-2">
                           <span className="text-[#7280FF] mt-0.5 shrink-0">•</span>{e}
                         </li>
@@ -386,10 +371,10 @@ export default function BriefsPage() {
                     </ul>
                   </CollapsibleSection>
 
-                  {detalle.referencias.length > 0 && (
+                  {detalle.references.length > 0 && (
                     <CollapsibleSection title="Referencias" defaultOpen={false}>
                       <ul className="space-y-1.5">
-                        {detalle.referencias.map((r, i) => (
+                        {detalle.references.map((r, i) => (
                           <li key={i} className="theme-dashboard-muted text-sm flex items-start gap-2">
                             <span className="text-[#7280FF] mt-0.5 shrink-0">•</span>{r}
                           </li>
@@ -399,13 +384,13 @@ export default function BriefsPage() {
                   )}
 
                   <CollapsibleSection title="Tono de marca" defaultOpen={false}>
-                    <p className="theme-dashboard-text text-sm">{detalle.tonoMarca}</p>
+                    <p className="theme-dashboard-text text-sm">{detalle.tone}</p>
                   </CollapsibleSection>
 
-                  {detalle.pendientes.length > 0 && (
+                  {detalle.pendingQuestions.length > 0 && (
                     <CollapsibleSection title="Pendientes del cliente">
                       <div className="space-y-2">
-                        {detalle.pendientes.map((p, i) => (
+                        {detalle.pendingQuestions.map((p, i) => (
                           <div key={i} className="rounded-md bg-yellow-500/10 border border-yellow-500/20 px-3 py-2">
                             <p className="text-yellow-400 text-xs leading-relaxed">{p}</p>
                           </div>
@@ -414,12 +399,12 @@ export default function BriefsPage() {
                     </CollapsibleSection>
                   )}
 
-                  {detalle.respuestaSugerida && (
+                  {detalle.suggestedReply && (
                     <CollapsibleSection title="Respuesta sugerida">
                       <div className="relative">
                         <div className="rounded-lg bg-[#1A1F3A]/60 border theme-dashboard-border p-3 pr-16">
                           <p className="theme-dashboard-muted text-xs leading-relaxed whitespace-pre-wrap">
-                            {detalle.respuestaSugerida}
+                            {detalle.suggestedReply}
                           </p>
                         </div>
                         <button
@@ -432,11 +417,11 @@ export default function BriefsPage() {
                     </CollapsibleSection>
                   )}
 
-                  {detalle.fechaLimite && (
+                  {detalle.deadline && (
                     <div className="flex items-center gap-2 theme-dashboard-muted text-xs pt-1">
                       <span>Fecha límite:</span>
                       <span className="theme-dashboard-text font-medium">
-                        {new Date(detalle.fechaLimite).toLocaleDateString('es-CO')}
+                        {new Date(detalle.deadline).toLocaleDateString('es-CO')}
                       </span>
                     </div>
                   )}
@@ -449,7 +434,7 @@ export default function BriefsPage() {
             {/* Action buttons */}
             {detalle && (
               <div className="shrink-0 px-5 py-4 border-t theme-dashboard-border space-y-2">
-                {detalle.estado === 'borrador' && (
+                {(detalle.status === 'DRAFT' || detalle.status === 'PENDING') && (
                   <button
                     onClick={handleAprobar}
                     disabled={approving}
@@ -465,7 +450,7 @@ export default function BriefsPage() {
                 >
                   {regenerating ? 'Regenerando...' : 'Regenerar'}
                 </button>
-                {detalle.estado !== 'convertido' && (
+                {detalle.status !== 'CONVERTED' && (
                   <button
                     onClick={handleConvertir}
                     className="w-full rounded-lg border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 text-sm py-2 transition-colors"
