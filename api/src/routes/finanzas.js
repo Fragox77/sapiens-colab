@@ -19,14 +19,14 @@ router.get('/resumen', auth, async (req, res) => {
       if (from) dateFilter.$gte = new Date(from);
       if (to)   dateFilter.$lte = new Date(to);
 
-      const match = { designer: req.user._id, status: { $ne: 'cancelado' } };
+      const match = { designer: req.user.id, status: { $ne: 'cancelado' } };
       if (from || to) match.createdAt = dateFilter;
 
       const proyectos = await Project.find(match)
         .populate('client', 'name')
         .lean();
 
-      const liquidaciones = await Liquidacion.find({ colaboradorId: req.user._id })
+      const liquidaciones = await Liquidacion.find({ colaboradorId: req.user.id })
         .sort({ fecha: -1 })
         .lean();
 
