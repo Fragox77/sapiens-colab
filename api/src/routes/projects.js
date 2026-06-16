@@ -5,6 +5,7 @@ const Project = require('../models/Project');
 const Feedback = require('../models/Feedback');
 const ActivityLog = require('../models/ActivityLog');
 const { calcular } = require('../utils/cotizador');
+const mailer = require('../utils/mailer');
 
 async function logActivity(payload) {
   try {
@@ -42,6 +43,16 @@ router.post('/', auth, roles('cliente'), async (req, res) => {
 
     // Notificar admin vía WebSocket
     req.app.locals.notifyUser('admin', { type: 'NEW_PROJECT', project });
+
+    // Email al cliente
+    mailer.sendProjectCreated({
+      to: req.user.email,
+      clientName: req.user.name,
+      projectTitle: project.title,
+      total: pricing.total,
+      anticipo: pricing.anticipo,
+      projectId: project._id,
+    }).catch(() => {});
 
     res.status(201).json(project);
   } catch (err) {
@@ -115,8 +126,19 @@ router.patch('/:id/deliver', auth, roles('disenador'), async (req, res) => {
       meta: { round, status: project.status },
     });
 
-    // Notificar cliente
+    // Notificar cliente vía WebSocket y email
     req.app.locals.notifyUser(String(project.client), { type: 'DELIVERABLE_READY', projectId: project._id });
+
+    const populatedForEmail = await Project.findById(project._id).populate('client', 'name email');
+    if (populatedForEmail?.client?.email) {
+      mailer.sendDeliverableReady({
+        to: populatedForEmail.client.email,
+        clientName: populatedForEmail.client.name,
+        projectTitle: project.title,
+        projectId: project._id,
+        round,
+      }).catch(() => {});
+    }
 
     res.json(project);
   } catch (err) {
@@ -150,6 +172,28 @@ router.patch('/:id/review', auth, roles('cliente'), async (req, res) => {
     }
 
     await project.save();
+
+    // Emails post-guardado
+    const populated = await Project.findById(project._id).populate('designer', 'name email');
+    if (action === 'approve' && populated?.designer?.email) {
+      mailer.sendProjectApproved({
+        to: populated.designer.email,
+        designerName: populated.designer.name,
+        projectTitle: project.title,
+        designerPay: project.pricing.designerPay,
+        projectId: project._id,
+      }).catch(() => {});
+    } else if (action !== 'approve' && populated?.designer?.email) {
+      mailer.sendRevisionRequested({
+        to: populated.designer.email,
+        designerName: populated.designer.name,
+        projectTitle: project.title,
+        message: message || '',
+        projectId: project._id,
+        revisionsUsed: project.revisions.used,
+        revisionsMax: project.revisions.max,
+      }).catch(() => {});
+    }
 
     await logActivity({
       userId: req.user.id,

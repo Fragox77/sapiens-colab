@@ -224,6 +224,23 @@ export const finanzasApi = {
   }) => api.post<{ _id: string; colaboradorId: string; monto: number; fecha: string }>('/api/finanzas/liquidaciones', data),
 }
 
+// ─── Upload ───────────────────────────────────────────────────────────────────
+export const uploadApi = {
+  file: async (file: File): Promise<{ url: string; fileName: string; size: number; format: string }> => {
+    const token = getToken()
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${API}/api/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
+    return data
+  },
+}
+
 export const metricsApi = {
   dashboard: (params?: { from?: string; to?: string }) => {
     return api.get<import('@/types').DashboardMetrics>(`/api/metrics/dashboard${buildQuery(params)}`)

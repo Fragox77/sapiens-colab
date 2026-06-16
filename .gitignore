@@ -13,7 +13,12 @@ web/.env.production.local
 
 # API
 api/.env
+api/.env.production
 api/logs/
+
+# Variables de entorno de producción (nunca commitear con credenciales reales)
+.env.production
+web/.env.production
 
 # Build
 dist/

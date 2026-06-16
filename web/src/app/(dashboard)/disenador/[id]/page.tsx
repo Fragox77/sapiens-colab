@@ -1,7 +1,7 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { projectsApi } from '@/lib/api'
+import { projectsApi, uploadApi } from '@/lib/api'
 import type { Project } from '@/types'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -20,10 +20,14 @@ export default function DisenadorProyectoPage() {
   const [error, setError]       = useState('')
 
   // Subir entregable
-  const [fileUrl, setFileUrl]   = useState('')
-  const [fileName, setFileName] = useState('')
+  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file')
+  const [fileUrl, setFileUrl]       = useState('')
+  const [fileName, setFileName]     = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading]   = useState(false)
   const [delivering, setDelivering] = useState(false)
   const [deliverError, setDeliverError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function load() {
     try {
@@ -39,14 +43,38 @@ export default function DisenadorProyectoPage() {
 
   async function handleDeliver(e: React.FormEvent) {
     e.preventDefault()
-    if (!fileUrl.trim() || !fileName.trim()) return
-    setDelivering(true)
     setDeliverError('')
+
+    let resolvedUrl = ''
+    let resolvedName = ''
+
+    if (uploadMode === 'file') {
+      if (!selectedFile) return
+      setUploading(true)
+      try {
+        const result = await uploadApi.file(selectedFile)
+        resolvedUrl  = result.url
+        resolvedName = result.fileName
+      } catch (err) {
+        setDeliverError(err instanceof Error ? err.message : 'Error al subir el archivo')
+        setUploading(false)
+        return
+      }
+      setUploading(false)
+    } else {
+      if (!fileUrl.trim() || !fileName.trim()) return
+      resolvedUrl  = fileUrl.trim()
+      resolvedName = fileName.trim()
+    }
+
+    setDelivering(true)
     try {
-      const updated = await projectsApi.deliver(id, { fileUrl: fileUrl.trim(), fileName: fileName.trim() })
+      const updated = await projectsApi.deliver(id, { fileUrl: resolvedUrl, fileName: resolvedName })
       setProject(updated)
       setFileUrl('')
       setFileName('')
+      setSelectedFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
       setDeliverError(err instanceof Error ? err.message : 'Error al entregar')
     } finally {
@@ -161,45 +189,106 @@ export default function DisenadorProyectoPage() {
           <h2 className="text-sm font-semibold text-cobalt mb-1">
             {p.status === 'ajuste' ? 'Subir versión corregida' : 'Subir entregable'}
           </h2>
-          <p className="text-xs text-gray-400 mb-4">
-            Sube el archivo a Google Drive, Dropbox o cualquier servicio en la nube y pega el enlace aquí.
-          </p>
+
+          {/* Toggle modo */}
+          <div className="flex gap-2 mb-4 mt-3">
+            <button
+              type="button"
+              onClick={() => setUploadMode('file')}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                uploadMode === 'file'
+                  ? 'bg-cobalt text-white border-cobalt'
+                  : 'border-gray-200 text-gray-500 hover:border-cobalt/30'
+              }`}
+            >
+              Subir archivo
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('url')}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                uploadMode === 'url'
+                  ? 'bg-cobalt text-white border-cobalt'
+                  : 'border-gray-200 text-gray-500 hover:border-cobalt/30'
+              }`}
+            >
+              Pegar enlace
+            </button>
+          </div>
+
           <form onSubmit={handleDeliver} className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
-                Nombre del archivo
-              </label>
-              <input
-                type="text"
-                value={fileName}
-                onChange={e => setFileName(e.target.value)}
-                placeholder="ej. Branding_v2_final.pdf"
-                required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/40"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
-                Enlace al archivo
-              </label>
-              <input
-                type="url"
-                value={fileUrl}
-                onChange={e => setFileUrl(e.target.value)}
-                placeholder="https://drive.google.com/..."
-                required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/40"
-              />
-            </div>
+            {uploadMode === 'file' ? (
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
+                  Archivo (PDF, PNG, ZIP, AI, PSD, MP4…)
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full border-2 border-dashed rounded-lg px-4 py-6 text-center cursor-pointer transition-colors ${
+                    selectedFile ? 'border-cobalt/40 bg-cobalt/5' : 'border-gray-200 hover:border-cobalt/30'
+                  }`}
+                >
+                  {selectedFile ? (
+                    <div>
+                      <div className="text-sm font-semibold text-cobalt">{selectedFile.name}</div>
+                      <div className="text-xs text-gray-400 mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-2xl mb-2">📁</div>
+                      <div className="text-sm text-gray-400">Haz clic para seleccionar un archivo</div>
+                      <div className="text-xs text-gray-300 mt-1">Máximo 50 MB</div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.gif,.mp4,.mov,.zip,.ai,.psd,.fig,.svg"
+                  className="hidden"
+                  onChange={e => setSelectedFile(e.target.files?.[0] ?? null)}
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
+                    Nombre del archivo
+                  </label>
+                  <input
+                    type="text"
+                    value={fileName}
+                    onChange={e => setFileName(e.target.value)}
+                    placeholder="ej. Branding_v2_final.pdf"
+                    required
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/40"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 block">
+                    Enlace (Drive, Dropbox, etc.)
+                  </label>
+                  <input
+                    type="url"
+                    value={fileUrl}
+                    onChange={e => setFileUrl(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                    required
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-cobalt placeholder-gray-300 focus:outline-none focus:border-cobalt/40"
+                  />
+                </div>
+              </>
+            )}
+
             {deliverError && (
               <div className="text-xs text-red-600 bg-red-50 rounded-lg p-2">{deliverError}</div>
             )}
             <button
               type="submit"
-              disabled={delivering}
+              disabled={uploading || delivering || (uploadMode === 'file' && !selectedFile) || (uploadMode === 'url' && (!fileUrl.trim() || !fileName.trim()))}
               className="w-full bg-cobalt text-white font-semibold py-3 rounded-lg hover:bg-cobalt-mid transition-colors disabled:opacity-60 text-sm"
             >
-              {delivering ? 'Enviando...' : '↑ Enviar al cliente'}
+              {uploading ? 'Subiendo archivo...' : delivering ? 'Enviando al cliente...' : '↑ Enviar entregable'}
             </button>
           </form>
         </div>

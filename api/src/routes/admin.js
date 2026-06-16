@@ -7,6 +7,7 @@ const Application = require('../models/Application');
 const ActivityLog = require('../models/ActivityLog');
 const Quote = require('../models/Quote');
 const { calcularPagoDisenador } = require('../utils/cotizador');
+const mailer = require('../utils/mailer');
 
 async function logActivity(payload) {
   try {
@@ -52,8 +53,20 @@ router.patch('/projects/:id/assign', async (req, res) => {
       meta: { designerId, designerName: designer.name },
     });
 
-    // Notificar diseñador
+    // Notificar diseñador vía WebSocket y email
     req.app.locals.notifyUser(designerId, { type: 'PROJECT_ASSIGNED', projectId: project._id });
+
+    const clientUser = await User.findById(project.client).select('name email');
+    if (clientUser?.email) {
+      mailer.sendProjectAssigned({
+        toClient:     clientUser.email,
+        toDesigner:   designer.email,
+        clientName:   clientUser.name,
+        designerName: designer.name,
+        projectTitle: project.title,
+        projectId:    project._id,
+      }).catch(() => {});
+    }
 
     res.json(project);
   } catch (err) {
@@ -83,6 +96,17 @@ router.patch('/projects/:id/complete', async (req, res) => {
       eventType: 'project_completed',
       meta: { balancePaid: true, designerPay: project.pricing.designerPay },
     });
+
+    // Email al cliente
+    const clientUser = await User.findById(project.client).select('name email');
+    if (clientUser?.email) {
+      mailer.sendProjectCompleted({
+        to: clientUser.email,
+        clientName: clientUser.name,
+        projectTitle: project.title,
+        projectId: project._id,
+      }).catch(() => {});
+    }
 
     res.json({ project, designerPay: project.pricing.designerPay });
   } catch (err) {

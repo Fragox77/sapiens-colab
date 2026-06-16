@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Financiera — SAPIENS COLAB</title>
+  <style>
+    :root {
+      --cobalt: #1E1B4B;
+      --cobalt-light: #2D2A5E;
+      --cobalt-border: #3D3A6E;
+      --coral: #FF4D6D;
+      --coral-light: #FF6B85;
+      --platinum: #F5F7FA;
+      --text: #E2E8F0;
+      --text-muted: #94A3B8;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --card: #252250;
+      --card-border: #332F6B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--cobalt);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .logo {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .logo span { color: var(--coral); }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--platinum);
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Layout ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--coral);
+      margin-bottom: 16px;
+    }
+
+    /* ── Inputs ── */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--cobalt);
+      border: 1px solid var(--cobalt-border);
+      border-radius: 7px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .input-wrap:focus-within { border-color: var(--coral); }
+    .input-prefix, .input-suffix {
+      padding: 0 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: transparent;
+      user-select: none;
+    }
+    .input-wrap input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--platinum);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 4px;
+      width: 100%;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--cobalt-border);
+      border-radius: 2px;
+      outline: none;
+      margin-top: 6px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--coral);
+      cursor: pointer;
+    }
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Results column ── */
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .results-grid .card.full { grid-column: 1 / -1; }
+
+    /* ── Rows inside cards ── */
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--cobalt-border);
+    }
+    .row:last-child { border-bottom: none; }
+    .row-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex: 1;
+      padding-right: 8px;
+    }
+    .row-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .row-value.green { color: var(--green); }
+    .row-value.coral { color: var(--coral); }
+    .row-value.amber { color: var(--amber); }
+    .row-value.muted { color: var(--text-muted); font-weight: 400; }
+
+    /* ── Summary KPIs ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--platinum);
+    }
+    .kpi-value.coral { color: var(--coral); }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.amber { color: var(--amber); }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Bar chart ── */
+    .bar-wrap { margin-top: 10px; }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .bar-label { font-size: 11px; color: var(--text-muted); width: 140px; flex-shrink: 0; }
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--cobalt);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .bar-pct { font-size: 11px; font-weight: 700; width: 40px; text-align: right; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .tag-green { background: rgba(16,185,129,0.15); color: var(--green); }
+    .tag-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .tag-coral { background: rgba(255,77,109,0.15); color: var(--coral); }
+
+    .divider {
+      height: 1px;
+      background: var(--cobalt-border);
+      margin: 12px 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .results-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">SAPIENS <span>COLAB</span> · Herramientas</div>
+    <h1>Calculadora financiera por proyecto</h1>
+    <div class="subtitle">Comisión · Retenciones · Pago freelancer · Utilidad neta</div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-label">Total factura cliente</div>
+    <div class="kpi-value" id="kpi-factura">$0</div>
+    <div class="kpi-sub">Base + IVA</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Comisión Sapiens</div>
+    <div class="kpi-value coral" id="kpi-comision">$0</div>
+    <div class="kpi-sub">Antes de costos fijos</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Utilidad neta Sapiens</div>
+    <div class="kpi-value green" id="kpi-utilidad">$0</div>
+    <div class="kpi-sub" id="kpi-margen">0% sobre base</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Pago neto freelancer</div>
+    <div class="kpi-value amber" id="kpi-freelancer">$0</div>
+    <div class="kpi-sub">Después de retefuente</div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ── INPUTS ── -->
+  <div>
+    <div class="card">
+      <div class="card-title">Parámetros del proyecto</div>
+
+      <div class="field">
+        <label>Base del proyecto (sin IVA)</label>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="base" value="10000000" min="0" step="100000" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Comisión Sapiens Colab — <span id="lbl-comision">25%</span></label>
+        <input type="range" id="comision" min="5" max="40" value="25" step="0.5" />
+        <div class="range-labels"><span>5%</span><span>40%</span></div>
+      </div>
+
+      <div class="field">
+        <label>IVA — <span id="lbl-iva">19%</span></label>
+        <input type="range" id="iva" min="0" max="25" value="19" step="0.5" />
+        <div class="range-labels"><span>0%</span><span>25%</span></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Retefuente cliente — <span id="lbl-rfc">10%</span></label>
+        <input type="range" id="rfc" min="0" max="15" value="10" step="0.5" />
+        <div class="range-labels"><span>0%</span><span>15%</span></div>
+      </div>
+
+      <div class="field">
+        <label>ReteICA cliente — <span id="lbl-rica">1.5%</span></label>
+        <input type="range" id="rica" min="0" max="5" value="1.5" step="0.1" />
+        <div class="range-labels"><span>0%</span><span>5%</span></div>
+      </div>
+
+      <div class="field">
+        <label>Retefuente freelancer — <span id="lbl-rff">11%</span></label>
+        <input type="range" id="rff" min="0" max="15" value="11" step="0.5" />
+        <div class="range-labels"><span>0%</span><span>15%</span></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Costos fijos del proyecto</label>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="fijos" value="200000" min="0" step="10000" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribución visual -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Distribución de la base</div>
+      <div class="bar-wrap">
+        <div class="bar-row">
+          <div class="bar-label">Pago neto freelancer</div>
+          <div class="bar-track"><div class="bar-fill" id="bar-fl" style="background:var(--amber)"></div></div>
+          <div class="bar-pct amber" id="pct-fl">0%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Utilidad neta Sapiens</div>
+          <div class="bar-track"><div class="bar-fill" id="bar-ut" style="background:var(--green)"></div></div>
+          <div class="bar-pct green" id="pct-ut">0%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Costos fijos</div>
+          <div class="bar-track"><div class="bar-fill" id="bar-cf" style="background:#6366F1"></div></div>
+          <div class="bar-pct" id="pct-cf" style="color:#818CF8">0%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Retef. freelancer</div>
+          <div class="bar-track"><div class="bar-fill" id="bar-rff" style="background:#475569"></div></div>
+          <div class="bar-pct muted" id="pct-rff">0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div>
+    <div class="results-grid">
+
+      <!-- Factura al cliente -->
+      <div class="card">
+        <div class="card-title">Factura al cliente</div>
+        <div class="row">
+          <div class="row-label">Base del proyecto</div>
+          <div class="row-value" id="r-base">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">IVA cobrado</div>
+          <div class="row-value muted" id="r-iva">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Total factura</div>
+          <div class="row-value coral" id="r-total">$0</div>
+        </div>
+      </div>
+
+      <!-- Lo que retiene el cliente -->
+      <div class="card">
+        <div class="card-title">Retenciones del cliente</div>
+        <div class="row">
+          <div class="row-label">Retefuente retenida</div>
+          <div class="row-value muted" id="r-rfc">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">ReteICA retenida</div>
+          <div class="row-value muted" id="r-rica">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Neto transferido a Sapiens</div>
+          <div class="row-value" id="r-neto-cliente">$0</div>
+        </div>
+        <div style="margin-top:10px; font-size:11px; color:var(--text-muted); line-height:1.5">
+          Las retenciones se pagan al fisco en nombre de Sapiens y se recuperan como crédito tributario.
+        </div>
+      </div>
+
+      <!-- Sapiens -->
+      <div class="card">
+        <div class="card-title">Ingresos Sapiens Colab</div>
+        <div class="row">
+          <div class="row-label">Comisión bruta</div>
+          <div class="row-value coral" id="r-comision">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Costos fijos</div>
+          <div class="row-value muted" id="r-fijos">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Utilidad neta</div>
+          <div class="row-value green" id="r-utilidad">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Margen sobre base</div>
+          <div class="row-value green" id="r-margen">0%</div>
+        </div>
+      </div>
+
+      <!-- Freelancer -->
+      <div class="card">
+        <div class="card-title">Pago al freelancer</div>
+        <div class="row">
+          <div class="row-label">Base freelancer</div>
+          <div class="row-value" id="r-base-fl">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Retefuente retenida</div>
+          <div class="row-value muted" id="r-rff">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">Pago neto al freelancer</div>
+          <div class="row-value amber" id="r-pago-fl">$0</div>
+        </div>
+        <div class="row">
+          <div class="row-label">% del total recibido</div>
+          <div class="row-value muted" id="r-pct-fl">0%</div>
+        </div>
+      </div>
+
+      <!-- Resumen completo -->
+      <div class="card full">
+        <div class="card-title">Flujo completo del proyecto</div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 0; overflow:hidden; border-radius:8px; border: 1px solid var(--cobalt-border)">
+
+          <div style="padding:14px; border-right:1px solid var(--cobalt-border)">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px">CLIENTE paga</div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Subtotal factura</div>
+              <div class="row-value" id="rs-factura">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">→ Transferido a Sapiens</div>
+              <div class="row-value green" id="rs-neto">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">→ Al fisco (retenciones)</div>
+              <div class="row-value muted" id="rs-ret-cliente">$0</div>
+            </div>
+          </div>
+
+          <div style="padding:14px; border-right:1px solid var(--cobalt-border)">
+            <div style="font-size:10px; color:var(--coral); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px">SAPIENS recibe</div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">En cuenta bancaria</div>
+              <div class="row-value" id="rs-cuenta">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Comisión neta</div>
+              <div class="row-value coral" id="rs-comision">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Utilidad después de costos</div>
+              <div class="row-value green" id="rs-utilidad">$0</div>
+            </div>
+          </div>
+
+          <div style="padding:14px">
+            <div style="font-size:10px; color:var(--amber); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px">FREELANCER recibe</div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Base asignada</div>
+              <div class="row-value" id="rs-base-fl">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Retef. descontada</div>
+              <div class="row-value muted" id="rs-rff">$0</div>
+            </div>
+            <div class="row" style="border-color:rgba(255,255,255,0.06)">
+              <div class="row-label">Pago neto</div>
+              <div class="row-value amber" id="rs-pago-fl">$0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Justicia percibida -->
+        <div id="justicia-wrap" style="margin-top:14px; padding:10px 14px; border-radius:8px; font-size:12px; display:flex; align-items:center; gap:8px">
+          <span id="justicia-icono">●</span>
+          <span id="justicia-texto"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  const PCT = v => v.toFixed(1) + '%';
+
+  function calcular() {
+    const base      = parseFloat(document.getElementById('base').value) || 0;
+    const comPct    = parseFloat(document.getElementById('comision').value) / 100;
+    const ivaPct    = parseFloat(document.getElementById('iva').value) / 100;
+    const rfcPct    = parseFloat(document.getElementById('rfc').value) / 100;
+    const ricaPct   = parseFloat(document.getElementById('rica').value) / 100;
+    const rffPct    = parseFloat(document.getElementById('rff').value) / 100;
+    const fijos     = parseFloat(document.getElementById('fijos').value) || 0;
+
+    // CLIENTE
+    const iva           = Math.round(base * ivaPct);
+    const totalFactura  = base + iva;
+    const retefCliente  = Math.round(base * rfcPct);
+    const reteICA       = Math.round(base * ricaPct);
+    const netoCliente   = totalFactura - retefCliente - reteICA;
+
+    // SAPIENS
+    const comision      = Math.round(base * comPct);
+    const utilidadBruta = comision;
+    const utilidadNeta  = comision - fijos;
+    const margen        = base > 0 ? utilidadNeta / base : 0;
+
+    // FREELANCER
+    const baseFL        = base - comision;
+    const retefFL       = Math.round(baseFL * rffPct);
+    const pagoFL        = baseFL - retefFL;
+
+    return { base, iva, totalFactura, retefCliente, reteICA, netoCliente,
+             comision, utilidadBruta, utilidadNeta, margen, fijos,
+             baseFL, retefFL, pagoFL };
+  }
+
+  function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+  function render() {
+    const d = calcular();
+
+    // KPIs
+    set('kpi-factura',    COP.format(d.totalFactura));
+    set('kpi-comision',   COP.format(d.comision));
+    set('kpi-utilidad',   COP.format(d.utilidadNeta));
+    set('kpi-margen',     PCT(d.margen * 100) + ' sobre base');
+    set('kpi-freelancer', COP.format(d.pagoFL));
+
+    // Factura
+    set('r-base',  COP.format(d.base));
+    set('r-iva',   COP.format(d.iva));
+    set('r-total', COP.format(d.totalFactura));
+
+    // Retenciones cliente
+    set('r-rfc',         COP.format(d.retefCliente));
+    set('r-rica',        COP.format(d.reteICA));
+    set('r-neto-cliente',COP.format(d.netoCliente));
+
+    // Sapiens
+    set('r-comision', COP.format(d.comision));
+    set('r-fijos',    '(' + COP.format(d.fijos) + ')');
+    set('r-utilidad', COP.format(d.utilidadNeta));
+    set('r-margen',   PCT(d.margen * 100));
+
+    // Freelancer
+    set('r-base-fl', COP.format(d.baseFL));
+    set('r-rff',     '(' + COP.format(d.retefFL) + ')');
+    set('r-pago-fl', COP.format(d.pagoFL));
+    set('r-pct-fl',  d.base > 0 ? PCT(d.pagoFL / d.base * 100) : '0%');
+
+    // Resumen
+    set('rs-factura',    COP.format(d.totalFactura));
+    set('rs-neto',       COP.format(d.netoCliente));
+    set('rs-ret-cliente',COP.format(d.retefCliente + d.reteICA));
+    set('rs-cuenta',     COP.format(d.netoCliente));
+    set('rs-comision',   COP.format(d.comision));
+    set('rs-utilidad',   COP.format(d.utilidadNeta));
+    set('rs-base-fl',    COP.format(d.baseFL));
+    set('rs-rff',        '(' + COP.format(d.retefFL) + ')');
+    set('rs-pago-fl',    COP.format(d.pagoFL));
+
+    // Barras de distribución
+    if (d.base > 0) {
+      const pctFL  = d.pagoFL / d.base * 100;
+      const pctUt  = d.utilidadNeta / d.base * 100;
+      const pctCF  = d.fijos / d.base * 100;
+      const pctRFF = d.retefFL / d.base * 100;
+
+      document.getElementById('bar-fl').style.width  = Math.max(0, pctFL)  + '%';
+      document.getElementById('bar-ut').style.width  = Math.max(0, pctUt)  + '%';
+      document.getElementById('bar-cf').style.width  = Math.max(0, pctCF)  + '%';
+      document.getElementById('bar-rff').style.width = Math.max(0, pctRFF) + '%';
+
+      set('pct-fl',  PCT(pctFL));
+      set('pct-ut',  PCT(pctUt));
+      set('pct-cf',  PCT(pctCF));
+      set('pct-rff', PCT(pctRFF));
+    }
+
+    // Justicia percibida
+    const comPct = parseFloat(document.getElementById('comision').value);
+    const jWrap  = document.getElementById('justicia-wrap');
+    const jTxt   = document.getElementById('justicia-texto');
+    const jIcon  = document.getElementById('justicia-icono');
+    if (comPct >= 30) {
+      jWrap.style.background = 'rgba(255,77,109,0.08)';
+      jIcon.style.color      = '#FF4D6D';
+      jTxt.textContent       = `Comisión alta (${comPct}%) — considera si el freelancer percibe justo pago vs. el valor que aporta la plataforma.`;
+    } else if (comPct >= 20) {
+      jWrap.style.background = 'rgba(245,158,11,0.08)';
+      jIcon.style.color      = '#F59E0B';
+      jTxt.textContent       = `Comisión equilibrada (${comPct}%) — margen sostenible para Sapiens y atractivo para el freelancer.`;
+    } else {
+      jWrap.style.background = 'rgba(16,185,129,0.08)';
+      jIcon.style.color      = '#10B981';
+      jTxt.textContent       = `Comisión baja (${comPct}%) — muy competitiva para atraer freelancers. Revisa que cubre costos operativos.`;
+    }
+  }
+
+  // Sync range → label
+  function syncRange(id, labelId, decimals = 0) {
+    const el = document.getElementById(id);
+    const lbl = document.getElementById(labelId);
+    el.addEventListener('input', () => {
+      lbl.textContent = parseFloat(el.value).toFixed(decimals) + '%';
+      render();
+    });
+  }
+
+  syncRange('comision', 'lbl-comision');
+  syncRange('iva',      'lbl-iva');
+  syncRange('rfc',      'lbl-rfc');
+  syncRange('rica',     'lbl-rica',  1);
+  syncRange('rff',      'lbl-rff');
+
+  document.getElementById('base').addEventListener('input', render);
+  document.getElementById('fijos').addEventListener('input', render);
+
+  render(); // initial paint
+</script>
+</body>
+</html>
